@@ -61,7 +61,7 @@ export function Junction({
           patternUnits="userSpaceOnUse"
           patternTransform="rotate(25)"
         >
-          <line x1="0" y1="0" x2="0" y2="5" stroke="#c9ceca" strokeWidth=".6" />
+          <line x1="0" y1="0" x2="0" y2="5" stroke="#cdcdcd" strokeWidth=".6" />
         </pattern>
         <pattern
           id="fine-dots"
@@ -69,7 +69,7 @@ export function Junction({
           height="8"
           patternUnits="userSpaceOnUse"
         >
-          <circle cx="1" cy="1" r=".55" fill="#b9bfba" />
+          <circle cx="1" cy="1" r=".55" fill="#bdbdbd" />
         </pattern>
         <marker
           id="field-arrow"
@@ -82,7 +82,7 @@ export function Junction({
           <path
             d="M0,0 L6,3 L0,6"
             fill="none"
-            stroke="#658b82"
+            stroke="#828282"
             strokeWidth="1.1"
           />
         </marker>
@@ -94,12 +94,12 @@ export function Junction({
           refY="3"
           orient="auto"
         >
-          <path d="M0,0 L6,3 L0,6" fill="none" stroke="#7b817b" />
+          <path d="M0,0 L6,3 L0,6" fill="none" stroke="#7f7f7f" />
         </marker>
       </defs>
       <g
         className="drafting-ground"
-        stroke="#e5e8e1"
+        stroke="#e7e7e7"
         strokeWidth=".7"
         fill="none"
       >
@@ -118,7 +118,7 @@ export function Junction({
       </g>
       <g
         className="substrate"
-        stroke="#929a91"
+        stroke="#989898"
         strokeWidth=".9"
         strokeLinejoin="round"
       >
@@ -129,7 +129,7 @@ export function Junction({
             [506, -18, -25],
             [-26, -18, -25],
           ])}
-          fill="#e8ebe4"
+          fill="#eaeaea"
         />
         <polygon
           points={points([
@@ -138,7 +138,7 @@ export function Junction({
             [506, 188, -25],
             [506, -18, -25],
           ])}
-          fill="#f1f2ed"
+          fill="#f1f1f1"
         />
         <polygon
           points={points([
@@ -147,7 +147,7 @@ export function Junction({
             [506, 188, -12],
             [-26, 188, -12],
           ])}
-          fill="#f4f5ef"
+          fill="#f4f4f4"
         />
         {[
           [-14, -6],
@@ -161,7 +161,7 @@ export function Junction({
             cy={project(x, y, -12)[1]}
             rx="3.4"
             ry="1.9"
-            fill="#e2e5de"
+            fill="#e4e4e4"
           />
         ))}
         <polygon
@@ -171,7 +171,7 @@ export function Junction({
             [480, 0, 0],
             [0, 0, 0],
           ])}
-          fill="#eef0e9"
+          fill="#efefef"
         />
         <polygon
           points={points([
@@ -189,11 +189,11 @@ export function Junction({
             [480, 170, 0],
             [480, 0, 0],
           ])}
-          fill="#e6ebe5"
+          fill="#eaeaea"
         />
-        <polygon points={surface(0, 240)} fill="#f8f6f0" />
-        <polygon points={surface(240, 480)} fill="#edf3ee" />
-        <polygon points={surface(left, right)} fill="#e0e7dc" stroke="none" />
+        <polygon points={surface(0, 240)} fill="#f6f6f6" />
+        <polygon points={surface(240, 480)} fill="#f1f1f1" />
+        <polygon points={surface(left, right)} fill="#e5e5e5" stroke="none" />
         <polygon
           points={points([
             [left, 0, 60],
@@ -201,7 +201,7 @@ export function Junction({
             [right, 0, 0],
             [left, 0, 0],
           ])}
-          fill="#dfe4d8"
+          fill="#e2e2e2"
           stroke="none"
           opacity=".85"
         />
@@ -222,14 +222,14 @@ export function Junction({
             key={i}
             d={`M${project(x, 170)} L${project(x, 0)} L${project(x, 0, 0)}`}
             fill="none"
-            stroke="#8b9a84"
+            stroke="#959595"
             strokeDasharray="4 4"
           />
         ))}
-        <polygon points={surface(0, 480)} fill="none" stroke="#626d61" />
+        <polygon points={surface(0, 480)} fill="none" stroke="#6a6a6a" />
         {[0, 480].map((x) => (
           <g key={x}>
-            <polygon points={surface(x - 7, x + 7, 62)} fill="#d8dcd5" />
+            <polygon points={surface(x - 7, x + 7, 62)} fill="#dbdbdb" />
             <polygon
               points={points([
                 [x - 7, 0, 62],
@@ -243,7 +243,7 @@ export function Junction({
               <path
                 key={i}
                 d={`M${project(x - 7, i * 12, 63)} L${project(x + 7, i * 12, 63)}`}
-                stroke="#adb4aa"
+                stroke="#b2b2b2"
                 strokeWidth=".7"
               />
             ))}
@@ -269,13 +269,13 @@ export function Junction({
             >
               <circle
                 r="5.2"
-                fill={exposed ? "#f8f9f5" : "none"}
-                stroke="#7d8779"
+                fill={exposed ? "#f8f8f8" : "none"}
+                stroke="#848484"
                 strokeWidth=".8"
               />
               <path
                 d={x < 240 ? "M-2.2,0 H2.2" : "M-2.2,0 H2.2 M0,-2.2 V2.2"}
-                stroke="#667361"
+                stroke="#6f6f6f"
                 strokeWidth=".9"
               />
             </g>
@@ -311,14 +311,21 @@ export function Junction({
                 cx={p[0]}
                 cy={p[1]}
                 r={minority ? 3.5 : 4.7}
-                fill={hole ? "#faf7f1" : "#608f82"}
-                stroke={hole ? "#cb806c" : "#547f74"}
+                fill={hole ? "#ffffff" : "#333333"}
+                stroke="#333333"
                 strokeWidth="1.4"
               />
+              {!hole && (
+                <path
+                  d={`M${p[0] - 1.6},${p[1]} h3.2`}
+                  stroke="#ffffff"
+                  strokeWidth=".8"
+                />
+              )}
               {hole && (
                 <path
                   d={`M${p[0] - 1.6},${p[1]} h3.2 M${p[0]},${p[1] - 1.6} v3.2`}
-                  stroke="#cb806c"
+                  stroke="#8f8f8f"
                   strokeWidth=".8"
                 />
               )}
@@ -340,10 +347,10 @@ export function Junction({
                   cx={p[0]}
                   cy={p[1]}
                   r="4.8"
-                  fill="#faf7f1"
-                  stroke="#cb806c"
+                  fill="#f7f7f7"
+                  stroke="#8f8f8f"
                 />
-                <circle cx={q[0]} cy={q[1]} r="4" fill="#608f82" />
+                <circle cx={q[0]} cy={q[1]} r="4" fill="#848484" />
               </g>
             );
           })}
@@ -351,7 +358,7 @@ export function Junction({
       )}
       <g
         opacity={stage > 0 ? Math.min(1, progress * 2) : 0}
-        stroke="#658b82"
+        stroke="#828282"
         strokeWidth="1.2"
         fill="none"
       >
@@ -371,72 +378,34 @@ export function Junction({
       </g>
       <g
         className="figure-labels"
-        fill="#5f685e"
-        fontSize="11"
-        fontFamily="monospace"
+        fill="#555555"
+        fontSize="12"
+        fontFamily="Inter, sans-serif"
       >
-        <path
-          d="M238 174 L208 128 H140"
-          fill="none"
-          stroke="#9da497"
-          strokeWidth=".8"
-        />
-        <circle cx="238" cy="174" r="2" fill="#9da497" />
-        <text x="140" y="113" fontSize="13" fill="#b16c58">
-          P-TYPE
+        <text x={project(55, 185, 74)[0]} y={project(55, 185, 74)[1]}>
+          P
         </text>
-        <text
-          x="140"
-          y="130"
-          transform="translate(0,17)"
-          fontSize="9"
-          letterSpacing="1"
-        >
-          HOLE-RICH
+        <text x={project(430, 185, 74)[0]} y={project(430, 185, 74)[1]}>
+          N
         </text>
-        <path
-          d="M662 202 L732 158 H800"
-          fill="none"
-          stroke="#9da497"
-          strokeWidth=".8"
-        />
-        <circle cx="662" cy="202" r="2" fill="#9da497" />
-        <text x="739" y="141" fontSize="13" fill="#557c70">
-          N-TYPE
-        </text>
-        <text
-          x="739"
-          y="158"
-          transform="translate(0,17)"
-          fontSize="9"
-          letterSpacing="1"
-        >
-          ELECTRON-RICH
-        </text>
-        <text
-          x="307"
-          y="311"
-          transform="rotate(15.7 307 311)"
-          fontSize="8"
-          letterSpacing="2"
-        >
-          Si / MONOCRYSTALLINE
-        </text>
-        <path
-          d={`M${project(left, 176, 65)} l0,-18 M${project(right, 176, 65)} l0,-18 M${project(left, 176, 78)} L${project(right, 176, 78)}`}
-          fill="none"
-          stroke="#89947f"
-          strokeWidth=".8"
-        />
-        <text
-          x={project(240, 176, 100)[0]}
-          y={project(240, 176, 100)[1]}
-          textAnchor="middle"
-          fontSize="9"
-          letterSpacing="1.2"
-        >
-          {stage === 0 ? "THE JUNCTION" : "DEPLETION REGION"}
-        </text>
+        {stage > 0 && (
+          <>
+            <path
+              d={`M${project(left, 176, 65)} l0,-18 M${project(right, 176, 65)} l0,-18 M${project(left, 176, 78)} L${project(right, 176, 78)}`}
+              fill="none"
+              stroke="#999999"
+              strokeWidth=".8"
+            />
+            <text
+              x={project(240, 176, 103)[0]}
+              y={project(240, 176, 103)[1]}
+              textAnchor="middle"
+              fontSize="10"
+            >
+              Depletion region
+            </text>
+          </>
+        )}
       </g>
       <g
         opacity={connected ? connection : 0}
@@ -451,26 +420,26 @@ export function Junction({
         >
           <path
             d={`M${terminalP} C140,310 110,415 230,448 S495,478 628,485`}
-            stroke="#b77f6e"
+            stroke="#8a8a8a"
           />
           <path
             d={`M${terminalN} C825,259 873,360 829,429 S748,466 714,496`}
-            stroke="#6f8e80"
+            stroke="#868686"
           />
         </g>
-        <g transform="translate(589 411)" stroke="#6a7266" strokeWidth=".9">
-          <path d="M0,30 88,0 179,34 91,65 Z" fill="#fafbf7" />
-          <path d="M0,30 91,65 91,117 0,82 Z" fill="#f0f2eb" />
-          <path d="M91,65 179,34 179,87 91,117 Z" fill="#e6ebe1" />
-          <path d="M12,38 72,61 72,87 12,64Z" fill="#e0e8dc" />
+        <g transform="translate(589 411)" stroke="#6f6f6f" strokeWidth=".9">
+          <path d="M0,30 88,0 179,34 91,65 Z" fill="#fafafa" />
+          <path d="M0,30 91,65 91,117 0,82 Z" fill="#f1f1f1" />
+          <path d="M91,65 179,34 179,87 91,117 Z" fill="#e9e9e9" />
+          <path d="M12,38 72,61 72,87 12,64Z" fill="#e5e5e5" />
           <text
             x="20"
             y="55"
             transform="rotate(21 20 55)"
             fontSize="13"
-            fill="#4c6757"
+            fill="#606060"
             stroke="none"
-            fontFamily="monospace"
+            fontFamily="Inter, sans-serif"
           >
             {bias === "forward" && stage === 2
               ? "+0.4"
@@ -483,11 +452,11 @@ export function Junction({
             rx="10"
             ry="12"
             transform="rotate(18 111 82)"
-            fill="#f7f8f3"
+            fill="#f7f7f7"
           />
           <path d="M111,81 l4,-7" />
-          <ellipse cx="39" cy="78" rx="4" ry="3" fill="#b77f6e" />
-          <ellipse cx="125" cy="88" rx="4" ry="3" fill="#6f8e80" />
+          <ellipse cx="39" cy="78" rx="4" ry="3" fill="#8a8a8a" />
+          <ellipse cx="125" cy="88" rx="4" ry="3" fill="#868686" />
           <text x="23" y="78" stroke="none" fontSize="9">
             {bias === "forward" && stage === 2 ? "+" : "−"}
           </text>
@@ -501,15 +470,15 @@ export function Junction({
             fontSize="8"
             stroke="none"
             letterSpacing="1.3"
-            fill="#747d6d"
+            fill="#7a7a7a"
           >
-            DC / PRECISION SOURCE
+            DC
           </text>
           {[0, 1, 2, 3, 4].map((i) => (
             <path
               key={i}
               d={`M${145 + i * 4},${56 - i * 1.5} v16`}
-              stroke="#acb5a4"
+              stroke="#b2b2b2"
             />
           ))}
         </g>
@@ -551,18 +520,6 @@ export function Junction({
             }
           }}
         />
-      </g>
-      <g fill="#9ba294" fontFamily="monospace" fontSize="8" letterSpacing="1.5">
-        <text x="98" y="535">
-          FIG. 0{stage + 1}
-        </text>
-        <path d="M98,545 h45" stroke="#9ba294" strokeWidth=".7" />
-        <text x="98" y="563">
-          AXONOMETRIC VIEW
-        </text>
-        <text x="98" y="577">
-          SCHEMATIC · NOT TO SCALE
-        </text>
       </g>
     </svg>
   );

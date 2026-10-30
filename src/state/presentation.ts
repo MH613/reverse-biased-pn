@@ -35,45 +35,29 @@ export function depletionWidth(
     return bias === "reverse" ? 98 + 46 * progress : 98 - 55 * progress;
   return 98 * Math.sqrt(1 + voltage / 0.7);
 }
-export const stages = [
+export const chapters = [
   {
+    title: "Two sides.\nOne junction.",
+    theory:
+      "P-type silicon has mostly holes. N-type silicon has mostly electrons. Where they meet, mobile charges begin to cross the boundary.",
     label: "The PN junction",
-    eyebrow: "01 / THE BUILDING BLOCK",
-    title: ["Two materials.", "One junction."],
-    description:
-      "A small boundary. An extraordinary effect. Discover what happens when two types of semiconductor meet.",
-    insight: "It starts with an imbalance.",
-    detail:
-      "P-type silicon has an abundance of holes. N-type silicon has an abundance of electrons. At their boundary, a new kind of balance begins.",
   },
   {
-    label: "An internal electric field",
-    eyebrow: "02 / FINDING EQUILIBRIUM",
-    title: ["A field forms.", "Balance follows."],
-    description:
-      "Carriers cross the junction and recombine, leaving behind a region of fixed, charged ions.",
-    insight: "Diffusion creates its own opposition.",
-    detail:
-      "Exposed donor ions on the N side and acceptor ions on the P side create a field from N to P. The resulting drift balances diffusion at equilibrium.",
+    title: "An invisible\nfield takes shape.",
+    theory:
+      "Electrons and holes diffuse and recombine, exposing fixed ions. Their field points from N to P. At equilibrium, drift balances diffusion.",
+    label: "The internal field",
   },
   {
+    title: "Change the voltage.\nChange the balance.",
+    theory:
+      "Connect P to negative and N to positive. Reverse bias draws majority carriers away, widening the barrier. Forward bias does the opposite.",
     label: "Introducing a bias",
-    eyebrow: "03 / AN EXTERNAL INFLUENCE",
-    title: ["A little voltage.", "A bigger barrier."],
-    description:
-      "Connect P to negative and N to positive. Reverse bias pulls majority carriers away from the junction.",
-    insight: "Polarity changes everything.",
-    detail:
-      "Reverse bias reinforces the built-in field and widens the depletion region. Forward bias lowers the barrier, allowing majority carriers to cross more readily.",
   },
   {
-    label: "The changing depletion region",
-    eyebrow: "04 / MAKING THE CONNECTION",
-    title: ["More reverse bias.", "More room between."],
-    description:
-      "Increase the reverse voltage. Watch the depletion region widen and the internal electric field grow.",
-    insight: "The boundary is not fixed.",
-    detail:
-      "As carriers retreat, more fixed ions are exposed. The depletion width and peak field increase together—approximately with the square root of the total junction potential.",
+    title: "A wider gap.\nA stronger field.",
+    theory:
+      "Increase reverse bias to expose more fixed ions. The depletion region widens and the peak electric field rises with it.",
+    label: "The depletion region",
   },
 ];

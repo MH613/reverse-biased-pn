@@ -1,111 +1,181 @@
 import { test, expect } from "@playwright/test";
-test("all stages, animation controls, polarity and shared field state work", async ({
+
+test("close-up overview flows into four working presentation stages", async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
-  await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Two materials.",
-  );
-  await page.getByRole("button", { name: "Inspect P-type holes" }).click();
+  await expect(page.locator("h1")).toContainText("A small junction.");
   await expect(
-    page.getByRole("heading", { name: "A hole is an absence." }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Close carrier detail" }).click();
+    page.locator(".topic-tags,.phase-tag,.observations,.legend-panel"),
+  ).toHaveCount(0);
+  const scene = await page.locator(".scene-camera").elementHandle();
+  const camera = () =>
+    page
+      .locator(".scene-camera")
+      .evaluate((el) => getComputedStyle(el).transform);
+  const closeup = await camera();
+  await page
+    .getByRole("button", { name: "Explore the junction", exact: true })
+    .click();
+  await expect(page.locator("h1")).toContainText("Two sides.");
+  await page.waitForTimeout(110);
+  const between = await camera();
+  await page.waitForTimeout(1400);
+  const settled = await camera();
+  expect(between).not.toBe(closeup);
+  expect(between).not.toBe(settled);
+  expect(await scene!.evaluate((el) => el.isConnected)).toBe(true);
+  await page.getByRole("button", { name: "Inspect P-type holes" }).click();
+  await expect(page.locator(".inspection")).toContainText(
+    "mobile positive charges",
+  );
+  await page.getByRole("button", { name: "Close material detail" }).click();
   await page.getByRole("button", { name: "Pause animation" }).click();
-  const carrier = page
-    .locator('.junction-illustration circle[fill="#608f82"]')
-    .first();
-  const before = await carrier.getAttribute("cx");
-  await page.waitForTimeout(200);
-  expect(await carrier.getAttribute("cx")).toBe(before);
+  const carriers = () =>
+    page
+      .locator(".junction-illustration")
+      .evaluate((el) =>
+        [...el.querySelectorAll("circle")].map((c) => [
+          c.getAttribute("cx"),
+          c.getAttribute("cy"),
+        ]),
+      );
+  const paused = await carriers();
+  await page.waitForTimeout(180);
+  expect(await carriers()).toEqual(paused);
   await page.getByRole("button", { name: "Play animation" }).click();
-  await page.waitForTimeout(200);
-  expect(await carrier.getAttribute("cx")).not.toBe(before);
-  await page.locator("h1").click();
+  await page.waitForTimeout(180);
+  expect(await carriers()).not.toEqual(paused);
   await page.keyboard.press("ArrowRight");
-  await expect(page.locator("h1")).toContainText("A field forms.");
+  await expect(page.locator("h1")).toContainText("An invisible");
+  await expect(page.locator(".field-profile")).toBeVisible();
   await page.getByRole("button", { name: "Skip to end of animation" }).click();
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(150);
   expect(
-    await page.locator(".stage-track .current span").getAttribute("style"),
+    await page
+      .locator(".stage-track .current .track-fill")
+      .getAttribute("style"),
   ).toContain("100%");
   await page.getByRole("button", { name: "Replay stage animation" }).click();
   await page.waitForTimeout(100);
   expect(
-    await page.locator(".stage-track .current span").getAttribute("style"),
+    await page
+      .locator(".stage-track .current .track-fill")
+      .getAttribute("style"),
   ).not.toContain("100%");
-  await page.getByRole("button", { name: "Next chapter" }).click();
-  await expect(page.locator("h1")).toContainText("A little voltage.");
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(page.locator("h1")).toContainText("Change the voltage.");
   await page.getByRole("button", { name: "Forward bias", exact: true }).click();
-  await expect(page.locator(".polarity")).toContainText("A lower barrier");
+  await expect(
+    page.getByRole("button", { name: "Forward bias", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Reverse bias", exact: true }).click();
-  await expect(page.locator(".polarity")).toContainText("A wider barrier");
-  await page.getByRole("button", { name: "Next chapter" }).click();
-  const range = page.getByRole("slider");
-  await range.fill("0");
-  await page.waitForTimeout(1700);
-  const profile = page.locator('.field-profile svg path[fill="#edf1e7"]');
+  await expect(
+    page.getByRole("button", { name: "Reverse bias", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(page.locator("h1")).toContainText("A wider gap.");
+  await page.getByRole("slider").fill("0");
+  await page.waitForTimeout(1400);
+  const profile = page.locator(".field-profile svg path").nth(3);
   const narrow = await profile.getAttribute("d");
-  await range.fill("5");
-  await page.waitForTimeout(1700);
-  expect(await profile.getAttribute("d")).not.toBe(narrow);
+  await page.getByRole("slider").fill("5");
+  await page.waitForTimeout(1400);
   await expect(page.locator("output")).toHaveText("5.0 V");
-  await page.screenshot({ path: "/tmp/junction-stage4.png", fullPage: true });
-  await page.getByRole("button", { name: "The laboratory" }).click();
+  expect(await profile.getAttribute("d")).not.toBe(narrow);
+  await page.getByRole("button", { name: "Laboratory", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await page.getByRole("button", { name: "Back to the beginning" }).click();
-  await expect(page.locator("h1")).toContainText("Two materials.");
-  await page.waitForTimeout(700);
-  await page.screenshot({ path: "/tmp/junction-desktop.png", fullPage: true });
-  expect(await page.evaluate(() => document.body.scrollWidth)).toBe(1440);
-  expect(
-    await page.evaluate(() => document.body.scrollHeight),
-  ).toBeLessThanOrEqual(960);
   await page.getByRole("button", { name: "Enter full screen" }).click();
-  await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => !!document.fullscreenElement))
+    .toBe(true);
   await page.getByRole("button", { name: "Exit full screen" }).click();
-  await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
+  await page.getByRole("button", { name: "Back to overview" }).click();
+  await expect(page.locator("h1")).toContainText("A small junction.");
+  expect(await scene!.evaluate((el) => el.isConnected)).toBe(true);
   expect(errors).toEqual([]);
 });
-test("mobile layout, reduced motion and navigation are usable", async ({
+
+test("wheel navigation is deliberate and the presentation stays monochrome", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await page.evaluate(() => document.fonts.ready);
-  expect(await page.evaluate(() => document.body.scrollWidth)).toBe(390);
-  await page
-    .getByRole("button", { name: "Stage 4: The changing depletion region" })
-    .click();
-  await expect(page.locator("h1")).toContainText("More reverse bias.");
-  await page.getByRole("slider").fill("3");
-  await expect(page.locator("output")).toHaveText("3.0 V");
-  await page.screenshot({ path: "/tmp/junction-mobile.png", fullPage: true });
+  await page.mouse.wheel(0, 140);
+  await expect(page.locator("h1")).toContainText("Two sides.");
+  await page.mouse.wheel(0, 140);
+  await page.waitForTimeout(250);
+  await expect(page.locator("h1")).toContainText("Two sides.");
+  await page.waitForTimeout(1200);
+  await page.mouse.wheel(0, 140);
+  await expect(page.locator("h1")).toContainText("An invisible");
+  const colors = await page.evaluate(() =>
+    [...document.querySelectorAll(".app-shell *")]
+      .flatMap((el) => {
+        const s = getComputedStyle(el);
+        return [s.color, s.backgroundColor, s.fill, s.stroke];
+      })
+      .filter((c) => c.startsWith("rgb")),
+  );
+  for (const color of colors) {
+    const channels = color
+      .match(/[\d.]+/g)!
+      .slice(0, 3)
+      .map(Number);
+    expect(channels[0]).toBe(channels[1]);
+    expect(channels[1]).toBe(channels[2]);
+  }
+  expect(
+    await page.locator("h1").evaluate((el) => getComputedStyle(el).fontFamily),
+  ).toContain("Inter");
 });
 
-test("all stages fit desktop and projector viewports", async ({ page }) => {
-  for (const [width, height] of [[1366,768],[1280,800],[1920,1080]]) {
-    await page.setViewportSize({width,height});
+test("mobile, reduced motion, and desktop/projector layouts", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  for (const [width, height] of [
+    [390, 844],
+    [1366, 768],
+    [1440, 900],
+    [1920, 1080],
+  ]) {
+    await page.setViewportSize({ width, height });
     await page.goto("/");
     await page.evaluate(() => document.fonts.ready);
-    for (let stage = 1; stage <= 4; stage++) {
-      await page.locator(".stage-track button").nth(stage-1).click();
-      await page.waitForTimeout(550);
-      const sizes = await page.evaluate(() => {
-        const copy = document.querySelector(".hero-copy")!.getBoundingClientRect();
-        const observations = document.querySelector(".observations")!.getBoundingClientRect();
-        return { width: document.body.scrollWidth, height: document.body.scrollHeight, copyBottom: copy.bottom, observationsTop: observations.top };
+    const verify = async () => {
+      expect(await page.evaluate(() => document.body.scrollWidth)).toBe(width);
+      expect(
+        await page.evaluate(() => document.body.scrollHeight),
+      ).toBeLessThanOrEqual(height);
+    };
+    await verify();
+    await page
+      .getByRole("button", { name: "Explore the junction", exact: true })
+      .click();
+    for (let i = 0; i < 4; i++) {
+      await page.locator(".stage-track button").nth(i).click();
+      await expect(page.locator("h1")).toContainText(
+        ["Two sides.", "An invisible", "Change the voltage.", "A wider gap."][
+          i
+        ],
+      );
+      await verify();
+      const collision = await page.evaluate(() => {
+        const copy = document
+            .querySelector(".chapter-copy")!
+            .getBoundingClientRect(),
+          footer = document.querySelector(".footer")!.getBoundingClientRect();
+        return copy.bottom > footer.top;
       });
-      expect(sizes.width).toBe(width);
-      expect(sizes.height).toBeLessThanOrEqual(height);
-      expect(sizes.copyBottom).toBeLessThanOrEqual(sizes.observationsTop);
+      expect(collision).toBe(false);
     }
+    await page.getByRole("slider").fill("3");
+    await expect(page.locator("output")).toHaveText("3.0 V");
   }
 });
