@@ -124,6 +124,7 @@ test("wire, validate, inspect, disconnect, and retain the circuit across present
   await page
     .getByRole("button", { name: "Back to explanation", exact: true })
     .click();
+  await expect(page.locator(".lab-shell")).toHaveCount(0);
   await expect(page.locator("h1")).toContainText("A small junction.");
   await page.getByRole("button", { name: "Laboratory", exact: true }).click();
   await expect(page.locator(".lab-wire")).toHaveCount(3);

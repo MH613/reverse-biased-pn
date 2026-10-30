@@ -750,3 +750,115 @@ input[type="range"]::-webkit-slider-thumb {
     bottom: auto;
   }
 }
+
+.carrier-motion {
+  animation-name: carrier-thermal;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes carrier-thermal {
+  0.000% {
+    transform: translate(1.8px, 0px);
+  }
+  3.125% {
+    transform: translate(1.7654px, 0.2341px);
+  }
+  6.250% {
+    transform: translate(1.663px, 0.4592px);
+  }
+  9.375% {
+    transform: translate(1.4966px, 0.6667px);
+  }
+  12.500% {
+    transform: translate(1.2728px, 0.8485px);
+  }
+  15.625% {
+    transform: translate(1px, 0.9978px);
+  }
+  18.750% {
+    transform: translate(0.6888px, 1.1087px);
+  }
+  21.875% {
+    transform: translate(0.3512px, 1.1769px);
+  }
+  25.000% {
+    transform: translate(0px, 1.2px);
+  }
+  28.125% {
+    transform: translate(-0.3512px, 1.1769px);
+  }
+  31.250% {
+    transform: translate(-0.6888px, 1.1087px);
+  }
+  34.375% {
+    transform: translate(-1px, 0.9978px);
+  }
+  37.500% {
+    transform: translate(-1.2728px, 0.8485px);
+  }
+  40.625% {
+    transform: translate(-1.4966px, 0.6667px);
+  }
+  43.750% {
+    transform: translate(-1.663px, 0.4592px);
+  }
+  46.875% {
+    transform: translate(-1.7654px, 0.2341px);
+  }
+  50.000% {
+    transform: translate(-1.8px, 0px);
+  }
+  53.125% {
+    transform: translate(-1.7654px, -0.2341px);
+  }
+  56.250% {
+    transform: translate(-1.663px, -0.4592px);
+  }
+  59.375% {
+    transform: translate(-1.4966px, -0.6667px);
+  }
+  62.500% {
+    transform: translate(-1.2728px, -0.8485px);
+  }
+  65.625% {
+    transform: translate(-1px, -0.9978px);
+  }
+  68.750% {
+    transform: translate(-0.6888px, -1.1087px);
+  }
+  71.875% {
+    transform: translate(-0.3512px, -1.1769px);
+  }
+  75.000% {
+    transform: translate(-0px, -1.2px);
+  }
+  78.125% {
+    transform: translate(0.3512px, -1.1769px);
+  }
+  81.250% {
+    transform: translate(0.6888px, -1.1087px);
+  }
+  84.375% {
+    transform: translate(1px, -0.9978px);
+  }
+  87.500% {
+    transform: translate(1.2728px, -0.8485px);
+  }
+  90.625% {
+    transform: translate(1.4966px, -0.6667px);
+  }
+  93.750% {
+    transform: translate(1.663px, -0.4592px);
+  }
+  96.875% {
+    transform: translate(1.7654px, -0.2341px);
+  }
+  100.000% {
+    transform: translate(1.8px, -0px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .carrier-motion {
+    animation: none !important;
+  }
+}

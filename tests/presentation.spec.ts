@@ -37,12 +37,9 @@ test("close-up overview flows into four working presentation stages", async ({
   await page.getByRole("button", { name: "Pause animation" }).click();
   const carriers = () =>
     page
-      .locator(".junction-illustration")
-      .evaluate((el) =>
-        [...el.querySelectorAll("circle")].map((c) => [
-          c.getAttribute("cx"),
-          c.getAttribute("cy"),
-        ]),
+      .locator(".carrier-motion")
+      .evaluateAll((nodes) =>
+        nodes.map((el) => getComputedStyle(el).transform),
       );
   const paused = await carriers();
   await page.waitForTimeout(180);

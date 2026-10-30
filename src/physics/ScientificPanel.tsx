@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { memo, useId, useState } from "react";
 import { useSimulation } from "./SimulationContext";
 import {
   BUILT_IN_VOLTAGE_V,
@@ -24,7 +24,7 @@ const widthCurve = Array.from(
     `${i ? "L" : "M"}${voltageX(i / 10)},${widthY(solveJunction(i / 10).widthM)}`,
 ).join(" ");
 const sectionX = (m: number) => 20 + ((m + 1.2e-6) / 1.8e-6) * 320;
-export function ScientificPanel() {
+export const ScientificPanel = memo(function ScientificPanel() {
   const sim = useSimulation()!,
     s = sim.solution;
   const [reference, setReference] = useState(true),
@@ -336,4 +336,4 @@ export function ScientificPanel() {
       </details>
     </section>
   );
-}
+});

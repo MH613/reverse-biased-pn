@@ -1,6 +1,6 @@
 # Junction
 
-An interactive field guide to PN junctions. Phases 1–3 include the presentation, interactive isometric circuit laboratory, and a quantitative abrupt-junction depletion model with synchronized scientific visualizations.
+An interactive field guide to PN junctions. Phases 1–4 include the presentation, interactive isometric circuit laboratory, and a quantitative abrupt-junction depletion model with synchronized scientific visualizations.
 
 ## Develop
 
@@ -35,11 +35,11 @@ Desktop and projector layouts fit the viewport. Short or narrow displays can scr
 
 Open **Laboratory** from any presentation stage. The lab uses the same monochrome SVG models and isometric projection as the presentation.
 
-- **Move (V):** drag equipment to rearrange it. It follows the pointer without a drag spring; a translucent ghost previews the nearest valid 40-unit grid position. Release to settle into place. Footprints cannot overlap at rest. Select an instrument and use arrow keys to move it by one grid cell.
+- **Move (V):** drag equipment to rearrange it. It follows the pointer without a drag spring; a translucent ghost previews the nearest valid 40-unit grid position. Release to settle into place. Swept contact checks prevent equipment overlap even during fast dragging; movement slides along an obstructing instrument. Select an instrument and use arrow keys to move it by one grid cell.
 - **Wire (W):** choose a terminal, then a terminal on another instrument. A live dashed preview follows the pointer. Escape cancels. Select a wire and use Delete/Backspace or the Delete wire button to disconnect it. Electrical terminals are also keyboard accessible.
 - **Inspect (I):** select a device to see its function and properties. The PN module opens an enlarged semiconductor cross-section.
-- Drag empty grid to pan. Scroll to zoom around the cursor, or use the camera buttons and Fit workspace. Instrument movement and terminal coordinates account for camera zoom and pan.
-- Toggle optional connection hints. Reset circuit removes connections and the voltage setpoint while preserving instrument placement. Returning to the presentation and reopening the lab retains the session; refreshing the page starts a new one.
+- Drag empty grid to pan. Scroll to zoom around the cursor, or use the camera buttons and Fit workspace. Keyboard +/− zooms and 0 fits the workspace. Instrument movement and terminal coordinates account for camera zoom and pan.
+- Toggle optional connection hints. Reset circuit removes connections and the voltage setpoint while preserving instrument placement. Mode changes and Escape release active pointer capture safely. Returning to the presentation and reopening the lab retains the session; refreshing the page starts a new one.
 
 A suggested reverse-bias loop is **Supply + → Ammeter IN → Ammeter OUT → Junction N → Junction P → Supply −**, where the ammeter and junction provide their own internal links. The ammeter may be in either leg, but must be in series. Circuit validation follows the actual terminal graph, checks polarity, and diagnoses missing connections, branches, supply shorts, and a bypassed ammeter. Moving equipment never changes this graph. Supply adjustment (0–10 V) unlocks only for a valid reverse-bias circuit and resets to zero when it becomes invalid.
 
@@ -47,7 +47,9 @@ The lab now computes the actual depletion solution and ideal reverse diffusion c
 
 The field graph has a toggleable equilibrium reference. The width graph covers the full 0–10 V range. Both use fixed, labeled physical axes. The ammeter’s sign follows its IN/OUT orientation; ideal leakage saturates near 1.225 fA and is exactly zero at zero bias.
 
-See [the physical model, fixed parameters, units, assumptions, and numerical reference table](docs/physics.md). No breakdown, displacement-current or transient drift–diffusion behavior is invented. Phase 4 has not been implemented.
+See [the physical model, fixed parameters, units, assumptions, and numerical reference table](docs/physics.md). No breakdown, displacement-current or transient drift–diffusion behavior is invented. Phase 4 refines routing, motion, responsiveness and keyboard interaction. Phase 5 has not been implemented.
+
+See [the Phase 4 motion audit and profiling observations](docs/motion.md) for routing, animation, performance and reduced-motion details.
 
 ## Architecture and scientific scope
 
@@ -59,6 +61,8 @@ See [the physical model, fixed parameters, units, assumptions, and numerical ref
 - `src/hooks/usePresentationMotion.ts`: one animation clock and continuous depletion-width interpolation.
 - `src/lab/circuit.ts`: geometry-independent terminal graph and validation.
 - `src/lab/geometry.ts`: grid placement, collision checks, terminal locations, and continuous wire routing.
+- `src/lab/routing.ts`: obstacle-aware multi-wire planning with terminal clearance and stable route reuse.
+- `src/lab/useWireRoutes.ts`: orthogonal route interpolation with live terminal anchors.
 - `src/lab/Laboratory.tsx`: lab interactions, camera, instrument depth order, session state, and controls. Artwork and grid are memoized; pointer updates are coalesced per animation frame.
 - `src/physics/model.ts`: pure SI silicon physics and unit conversions.
 - `src/physics/useJunctionSimulation.ts`: one interpolated applied voltage and coherent derived snapshot.

@@ -14,67 +14,74 @@ export function usePresentationMotion(
     width = useRef(30),
     applied = useRef(0),
     previousBias = useRef(bias);
-  const config = useRef({ stage, playing, bias, manualVoltage, reducedMotion });
-  config.current = { stage, playing, bias, manualVoltage, reducedMotion };
-  const [frame, setFrame] = useState({
-    time: 0,
-    progress: 0,
-    width: 30,
-    voltage: 0,
-    pFraction: 2 / 3,
-  });
+  const [cycle, setCycle] = useState(0),
+    [frame, setFrame] = useState({
+      time: 0,
+      progress: 0,
+      width: 30,
+      voltage: 0,
+      pFraction: 2 / 3,
+    });
   useEffect(() => {
-    if (!enabled) return;
-    let id: number,
+    if (!enabled || !playing) return;
+    let id = 0,
       previous = 0;
     const tick = (now: number) => {
       const dt = Math.min((now - (previous || now)) / 1000, 0.05);
       previous = now;
-      const c = config.current;
-      if (previousBias.current !== c.bias) {
+      if (previousBias.current !== bias) {
         applied.current = 0;
-        previousBias.current = c.bias;
+        previousBias.current = bias;
       }
-      if (c.playing && !document.hidden) {
-        elapsed.current = Math.min(DURATION, elapsed.current + dt);
+      if (!document.hidden) {
+        elapsed.current = reducedMotion
+          ? DURATION
+          : Math.min(DURATION, elapsed.current + dt);
         clock.current += dt;
       }
-      const progress = elapsed.current / DURATION;
-      const requested =
-        c.stage === 3
-          ? (c.manualVoltage ??
-            2 + 8 * progress * progress * (3 - 2 * progress))
-          : c.stage >= 2
-            ? (c.bias === "forward" ? 0.4 : 2) * progress
-            : 0;
-      if (c.playing)
-        applied.current +=
-          (requested - applied.current) *
-          (c.reducedMotion ? 1 : 1 - Math.exp(-dt * 18));
-      const voltage = applied.current;
-      const target = depletionWidth(c.stage, progress, voltage, c.bias);
-      if (c.stage >= 2) width.current = target;
-      else if (c.playing)
-        width.current +=
-          (target - width.current) *
-          (c.reducedMotion ? 1 : 1 - Math.exp(-dt * 5));
+      const progress = elapsed.current / DURATION,
+        requested =
+          stage === 3
+            ? (manualVoltage ??
+              2 + 8 * progress * progress * (3 - 2 * progress))
+            : stage >= 2
+              ? (bias === "forward" ? 0.4 : 2) * progress
+              : 0;
+      applied.current +=
+        (requested - applied.current) *
+        (reducedMotion ? 1 : 1 - Math.exp(-dt * 18));
+      if (Math.abs(requested - applied.current) < 0.00001)
+        applied.current = requested;
+      const target = depletionWidth(stage, progress, applied.current, bias);
+      if (stage >= 2 || reducedMotion) width.current = target;
+      else width.current += (target - width.current) * (1 - Math.exp(-dt * 5));
+      if (Math.abs(target - width.current) < 0.001) width.current = target;
       setFrame({
-        time: c.reducedMotion ? 0 : clock.current,
+        time: clock.current,
         progress,
         width: width.current,
-        voltage,
+        voltage: applied.current,
         pFraction: 2 / 3,
       });
-      id = requestAnimationFrame(tick);
+      // Thermal carrier motion is native CSS. Once the timeline settles there is
+      // no React animation loop left running in an idle presentation.
+      if (
+        progress < 1 ||
+        applied.current !== requested ||
+        width.current !== target
+      )
+        id = requestAnimationFrame(tick);
     };
     id = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(id);
-  }, [enabled]);
+  }, [stage, playing, bias, manualVoltage, reducedMotion, enabled, cycle]);
   const reset = useCallback(() => {
     elapsed.current = 0;
+    setCycle((n) => n + 1);
   }, []);
   const skip = useCallback(() => {
     elapsed.current = DURATION;
+    setCycle((n) => n + 1);
   }, []);
   return { frame, reset, skip };
 }

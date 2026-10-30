@@ -30,6 +30,7 @@ import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-600.css";
 import "./style.css";
+import { motionTiming, easeOut } from "./motion";
 
 const inspection: Record<string, string> = {
   holes:
@@ -43,6 +44,7 @@ function App() {
     [bias, setBias] = useState<BiasMode>("reverse");
   const [manualVoltage, setManualVoltage] = useState<number | null>(null),
     [selected, setSelected] = useState<string | null>(null);
+  const [labLeaving, setLabLeaving] = useState(false);
   const [labOpen, setLabOpen] = useState(false),
     [fullscreen, setFullscreen] = useState(false),
     [fullError, setFullError] = useState("");
@@ -96,6 +98,7 @@ function App() {
     const onKey = (e: KeyboardEvent) => {
       if (
         labOpen ||
+        labLeaving ||
         (e.target as HTMLElement).closest(
           'input,textarea,select,[contenteditable="true"]',
         )
@@ -123,6 +126,7 @@ function App() {
     const onWheel = (e: WheelEvent) => {
       if (
         labOpen ||
+        labLeaving ||
         e.ctrlKey ||
         (e.target as HTMLElement).closest('input,[role="dialog"]')
       )
@@ -147,7 +151,7 @@ function App() {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("wheel", onWheel);
     };
-  }, [labOpen]);
+  }, [labOpen, labLeaving]);
   useEffect(() => {
     const onChange = () => setFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", onChange);
@@ -166,11 +170,27 @@ function App() {
   const saveLabSession = useCallback((session: LabSession) => {
     labSession.current = session;
   }, []);
+  useEffect(() => {
+    if (!labOpen && !labLeaving) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [labOpen, labLeaving]);
+  const restoreLabFocus = useRef(false);
+  useEffect(() => {
+    if (restoreLabFocus.current && !labOpen && !labLeaving) {
+      restoreLabFocus.current = false;
+      document
+        .querySelector<HTMLButtonElement>(".lab-button")
+        ?.focus({ preventScroll: true });
+    }
+  }, [labOpen, labLeaving]);
   const closeLab = useCallback(() => {
+    restoreLabFocus.current = true;
+    setLabLeaving(true);
     setLabOpen(false);
-    requestAnimationFrame(() =>
-      document.querySelector<HTMLButtonElement>(".lab-button")?.focus(),
-    );
   }, []);
   const handleVoltage = (e: React.FormEvent<HTMLInputElement>) => {
     setManualVoltage(Number(e.currentTarget.value));
@@ -202,12 +222,22 @@ function App() {
   return (
     <MotionConfig reducedMotion="user">
       <PresentationContext.Provider
-        value={{ stage, ...frame, playing, bias, reducedMotion }}
+        value={{
+          stage,
+          ...frame,
+          playing: playing && !labOpen,
+          bias,
+          reducedMotion,
+        }}
       >
-        <div
+        <motion.div
+          initial={false}
+          animate={{ opacity: labOpen ? 0 : 1 }}
+          transition={{ duration: motionTiming.view, ease: easeOut }}
           className={`app-shell ${home ? "is-home" : "is-presentation"}`}
-          style={{ display: labOpen ? "none" : undefined }}
-          inert={labOpen}
+          aria-hidden={labOpen || labLeaving}
+          style={{ pointerEvents: labOpen || labLeaving ? "none" : undefined }}
+          inert={labOpen || labLeaving}
         >
           <header className="header">
             <a
@@ -512,14 +542,20 @@ function App() {
               </button>
             </div>
           )}
-        </div>
-        {labOpen && (
-          <Laboratory
-            onClose={closeLab}
-            initial={labSession.current}
-            onSessionChange={saveLabSession}
-          />
-        )}
+        </motion.div>
+        <AnimatePresence
+          onExitComplete={() => {
+            setLabLeaving(false);
+          }}
+        >
+          {labOpen && (
+            <Laboratory
+              onClose={closeLab}
+              initial={labSession.current}
+              onSessionChange={saveLabSession}
+            />
+          )}
+        </AnimatePresence>
       </PresentationContext.Provider>
     </MotionConfig>
   );

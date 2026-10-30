@@ -279,6 +279,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .lab-current-pulse {
+    animation: none;
     display: none;
   }
 }

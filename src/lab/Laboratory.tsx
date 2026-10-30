@@ -1,5 +1,10 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  motion,
+  AnimatePresence,
+  useIsPresent,
+  useReducedMotion,
+} from "motion/react";
 import {
   ArrowLeft,
   MousePointer2,
@@ -30,7 +35,6 @@ import {
   terminals,
   suggestedConnections,
   sameConnection,
-  validateCircuit,
 } from "./circuit";
 import {
   type Position,
@@ -42,9 +46,11 @@ import {
   nearestPlacement,
   isValidPlacement,
   unproject,
-  routeWire,
+  moveWithCollisions,
 } from "./geometry";
 import "./laboratory.css";
+import { useWireRoutes } from "./useWireRoutes";
+import { motionTiming, easeOut } from "../motion";
 import { SimulationContext, useSimulation } from "../physics/SimulationContext";
 import { useJunctionSimulation } from "../physics/useJunctionSimulation";
 import { ScientificPanel } from "../physics/ScientificPanel";
@@ -145,6 +151,15 @@ export function Laboratory({
   initial: LabSession;
   onSessionChange: (session: LabSession) => void;
 }) {
+  const isPresent = useIsPresent();
+  const reducedMotion = useReducedMotion();
+  const presenceRef = useRef(isPresent),
+    reducedRef = useRef(reducedMotion);
+  presenceRef.current = isPresent;
+  reducedRef.current = reducedMotion;
+  const [panning, setPanning] = useState(false),
+    [resetting, setResetting] = useState(false),
+    [hoveredTerminal, setHoveredTerminal] = useState<TerminalId | null>(null);
   const [positions, setPositions] = useState<Positions>(initial.positions),
     [connections, setConnections] = useState<Connection[]>(initial.connections),
     [voltage, setVoltage] = useState(initial.voltage);
@@ -175,9 +190,30 @@ export function Laboratory({
     latestMove = useRef<Position | null>(null),
     cameraTarget = useRef(camera),
     bounds = useRef({ left: 0, top: 0, width: 1000, height: 700 }),
-    serial = useRef(0);
-  const simulation = useJunctionSimulation(voltage, connections);
+    serial = useRef(0),
+    activePointer = useRef<number | null>(null),
+    settlers = useRef(
+      new Map<InstrumentId, { from: Position; to: Position; start: number }>(),
+    ),
+    resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const simulation = useJunctionSimulation(voltage, connections, isPresent);
   const circuit = simulation.circuit;
+  const hintRequests = useMemo(
+    () =>
+      hints && !circuit.valid
+        ? suggestedConnections
+            .map((w, i) => ({ ...w, id: `hint-${i}` }))
+            .filter(
+              (w) => !connections.some((c) => sameConnection(c, w.from, w.to)),
+            )
+        : [],
+    [hints, circuit.valid, connections],
+  );
+  const routeRequests = useMemo(
+    () => [...connections, ...hintRequests],
+    [connections, hintRequests],
+  );
+  const wirePaths = useWireRoutes(routeRequests, positions, isPresent);
   positionsRef.current = positions;
   draftRef.current = draft;
   connectionsRef.current = connections;
@@ -198,14 +234,12 @@ export function Laboratory({
         project(v[0], v[1], 60),
       ]),
     );
-    const front =
-      Math.min(...Object.values(p).map((v) => v.y)) -
-      90 -
-      Math.max(2, ...connectionsRef.current.map((w) => w.lane ?? 0)) * 18;
-    terminals.forEach((t) => {
-      const q = terminalPoint(t, p);
-      corners.push(project(q[0], front, 0));
-    });
+    svg.current
+      ?.querySelectorAll<SVGPathElement>(".wire-visible,.connection-hint")
+      .forEach((path) => {
+        const r = path.getBBox();
+        corners.push([r.x, r.y], [r.x + r.width, r.y + r.height]);
+      });
     const xs = corners.map((v) => v[0]),
       ys = corners.map((v) => v[1]),
       minX = Math.min(...xs),
@@ -255,6 +289,7 @@ export function Laboratory({
       cancelAnimationFrame(settleFrame.current);
       cancelAnimationFrame(cameraFrame.current);
       cancelAnimationFrame(pointerFrame.current);
+      if (resetTimer.current) clearTimeout(resetTimer.current);
     };
   }, [fit]);
   function syncDraftPointer() {
@@ -286,7 +321,7 @@ export function Laboratory({
       previous = now;
       const c = cameraRef.current,
         t = cameraTarget.current,
-        k = 1 - Math.exp(-dt * 16);
+        k = reducedRef.current ? 1 : 1 - Math.exp(-dt * 16);
       const next = {
         x: c.x + (t.x - c.x) * k,
         y: c.y + (t.y - c.y) * k,
@@ -318,30 +353,94 @@ export function Laboratory({
     );
   };
   const settle = (id: InstrumentId, from: Position, to: Position) => {
-    cancelAnimationFrame(settleFrame.current);
-    let start = 0;
-    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    settlers.current.set(id, { from, to, start: 0 });
+    if (settleFrame.current) return;
     const tick = (now: number) => {
-      start ||= now;
-      const t = reduced ? 1 : Math.min(1, (now - start) / 200),
-        k = 1 - Math.pow(1 - t, 3);
-      const next = {
-        ...positionsRef.current,
-        [id]:
+      const next = { ...positionsRef.current };
+      const completed: InstrumentId[] = [];
+      for (const [item, s] of settlers.current) {
+        s.start ||= now;
+        const t = matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? 1
+            : Math.min(1, (now - s.start) / 200),
+          u = 8 * t,
+          k = (1 - (1 + u) * Math.exp(-u)) / (1 - 9 * Math.exp(-8));
+        const desired =
           t === 1
-            ? to
+            ? s.to
             : {
-                x: from.x + (to.x - from.x) * k,
-                y: from.y + (to.y - from.y) * k,
-              },
-      };
+                x: s.from.x + (s.to.x - s.from.x) * k,
+                y: s.from.y + (s.to.y - s.from.y) * k,
+              };
+        next[item] = moveWithCollisions(item, next[item], desired, next);
+        if (t === 1) {
+          if (
+            Math.hypot(next[item].x - s.to.x, next[item].y - s.to.y) > 0.001
+          ) {
+            const target = nearestPlacement(item, next[item], next);
+            settlers.current.set(item, {
+              from: next[item],
+              to: target,
+              start: now,
+            });
+          } else {
+            settlers.current.delete(item);
+            completed.push(item);
+          }
+        }
+      }
       positionsRef.current = next;
       setPositions(next);
-      if (t < 1) settleFrame.current = requestAnimationFrame(tick);
-      else setGhost(null);
+      if (completed.length)
+        setGhost((g) => (g && completed.includes(g.id) ? null : g));
+      settleFrame.current = settlers.current.size
+        ? requestAnimationFrame(tick)
+        : 0;
     };
     settleFrame.current = requestAnimationFrame(tick);
   };
+  function abortGesture() {
+    const g = gesture.current;
+    gesture.current = null;
+    if (g?.kind === "move") {
+      const p = positionsRef.current[g.id];
+      settle(g.id, p, nearestPlacement(g.id, p, positionsRef.current));
+    }
+    setDragging(false);
+    setPanning(false);
+    setHoveredTerminal(null);
+    cancelAnimationFrame(pointerFrame.current);
+    pointerFrame.current = 0;
+    cancelAnimationFrame(cameraFrame.current);
+    cameraFrame.current = 0;
+    cameraTarget.current = cameraRef.current;
+    const id = activePointer.current;
+    activePointer.current = null;
+    if (id !== null && svg.current?.hasPointerCapture(id))
+      svg.current.releasePointerCapture(id);
+  }
+  const leaveLab = () => {
+    let final = { ...positionsRef.current };
+    for (const [id, s] of settlers.current) final[id] = s.to;
+    if (gesture.current?.kind === "move") {
+      const id = gesture.current.id;
+      final[id] = nearestPlacement(id, final[id], final);
+    }
+    onSessionChange({ positions: final, connections, voltage });
+    if (resetTimer.current) clearTimeout(resetTimer.current);
+    gesture.current = null;
+    activePointer.current = null;
+    settlers.current.clear();
+    cancelAnimationFrame(settleFrame.current);
+    cancelAnimationFrame(cameraFrame.current);
+    cancelAnimationFrame(pointerFrame.current);
+    onClose();
+  };
+  useEffect(() => {
+    const blur = () => abortGesture();
+    window.addEventListener("blur", blur);
+    return () => window.removeEventListener("blur", blur);
+  }, []);
   const deleteWire = useCallback(() => {
     if (selectedWire) {
       setConnections((w) => w.filter((v) => v.id !== selectedWire));
@@ -351,8 +450,10 @@ export function Laboratory({
   }, [selectedWire]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
+      if (!presenceRef.current) return;
       if ((e.target as HTMLElement).closest("input,textarea")) return;
       if (e.key === "Escape") {
+        abortGesture();
         setDraft(null);
         setPointer(null);
         setSelectedWire(null);
@@ -363,22 +464,32 @@ export function Laboratory({
         e.preventDefault();
         deleteWire();
       }
-      if (e.key.toLowerCase() === "v") {
-        setMode("move");
-        setDraft(null);
+      if (e.key.toLowerCase() === "v") setInteractionMode("move");
+      if (e.key.toLowerCase() === "w") setInteractionMode("wire");
+      if (e.key.toLowerCase() === "i") setInteractionMode("inspect");
+      if (e.key === "+" || e.key === "=") {
+        e.preventDefault();
+        zoomBy(1.2);
       }
-      if (e.key.toLowerCase() === "w") setMode("wire");
-      if (e.key.toLowerCase() === "i") {
-        setMode("inspect");
-        setDraft(null);
+      if (e.key === "-") {
+        e.preventDefault();
+        zoomBy(1 / 1.2);
       }
+      if (e.key === "0") {
+        e.preventDefault();
+        fit();
+      }
+
       if (
         selected &&
         mode === "move" &&
         ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)
       ) {
         e.preventDefault();
-        const p = positionsRef.current[selected],
+        if (gesture.current) return;
+        const p =
+            settlers.current.get(selected)?.to ??
+            positionsRef.current[selected],
           next = {
             x:
               p.x +
@@ -388,7 +499,7 @@ export function Laboratory({
               (e.key === "ArrowUp" ? 40 : e.key === "ArrowDown" ? -40 : 0),
           };
         if (isValidPlacement(selected, next, positionsRef.current))
-          settle(selected, p, next);
+          settle(selected, positionsRef.current[selected], next);
         else setNotice("That grid position is occupied.");
       }
     };
@@ -397,6 +508,7 @@ export function Laboratory({
   }, [deleteWire, selected, mode]);
   useEffect(() => {
     const wheel = (e: WheelEvent) => {
+      if (!presenceRef.current) return;
       if (
         (e.target as HTMLElement).closest(
           ".lab-panel,.lab-toolbar,.lab-camera-controls,.wire-selection",
@@ -415,6 +527,7 @@ export function Laboratory({
           Math.min(2.4, c.zoom * Math.exp(-e.deltaY * 0.0015)),
         ),
         ratio = zoom / c.zoom;
+      if (Math.abs(zoom - c.zoom) < 1e-8) return;
       animateCamera({
         x: px - (px - c.x) * ratio,
         y: py - (py - c.y) * ratio,
@@ -426,12 +539,12 @@ export function Laboratory({
     return () => el?.removeEventListener("wheel", wheel);
   }, []);
   const startMove = (e: React.PointerEvent, id: InstrumentId) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || activePointer.current !== null) return;
     e.stopPropagation();
     setSelected(id);
     setSelectedWire(null);
     if (mode !== "move") return;
-    cancelAnimationFrame(settleFrame.current);
+    settlers.current.delete(id);
     cancelAnimationFrame(cameraFrame.current);
     cameraFrame.current = 0;
     cameraTarget.current = cameraRef.current;
@@ -445,6 +558,7 @@ export function Laboratory({
     };
     setDragging(true);
     setGhost({ id, position: p, blocked: false });
+    activePointer.current = e.pointerId;
     svg.current?.setPointerCapture(e.pointerId);
   };
   const processPointer = (client: Position) => {
@@ -461,17 +575,25 @@ export function Laboratory({
             Math.min(960 - instruments[g.id].depth, world.y - g.offset.y),
           ),
         };
-      const next = { ...positionsRef.current, [g.id]: position };
+      const safe = moveWithCollisions(
+        g.id,
+        positionsRef.current[g.id],
+        position,
+        positionsRef.current,
+      );
+      const next = { ...positionsRef.current, [g.id]: safe };
       positionsRef.current = next;
       setPositions(next);
       const snapped = {
-        x: Math.round(position.x / 40) * 40,
-        y: Math.round(position.y / 40) * 40,
+        x: Math.round(safe.x / 40) * 40,
+        y: Math.round(safe.y / 40) * 40,
       };
       setGhost({
         id: g.id,
-        position: nearestPlacement(g.id, position, next),
-        blocked: !isValidPlacement(g.id, snapped, next),
+        position: nearestPlacement(g.id, safe, next),
+        blocked:
+          Math.hypot(safe.x - position.x, safe.y - position.y) > 0.01 ||
+          !isValidPlacement(g.id, snapped, next),
       });
     } else if (g?.kind === "pan") {
       const next = {
@@ -483,9 +605,11 @@ export function Laboratory({
       cameraTarget.current = next;
       setCamera(next);
       syncDraftPointer();
-    } else if (draft) setPointer(clientWorld(client));
+    } else if (draftRef.current) setPointer(clientWorld(client));
   };
   const pointerMove = (e: React.PointerEvent) => {
+    if (activePointer.current !== null && activePointer.current !== e.pointerId)
+      return;
     latestMove.current = { x: e.clientX, y: e.clientY };
     if (pointerFrame.current) return;
     pointerFrame.current = requestAnimationFrame(() => {
@@ -494,20 +618,20 @@ export function Laboratory({
     });
   };
   const finishPointer = (e: React.PointerEvent, cancelled = false) => {
-    if (pointerFrame.current) {
-      cancelAnimationFrame(pointerFrame.current);
-      pointerFrame.current = 0;
-      if (latestMove.current) processPointer(latestMove.current);
-    }
+    if (activePointer.current !== null && activePointer.current !== e.pointerId)
+      return;
+    cancelAnimationFrame(pointerFrame.current);
+    pointerFrame.current = 0;
+    if (gesture.current && !cancelled)
+      processPointer({ x: e.clientX, y: e.clientY });
     const g = gesture.current;
     gesture.current = null;
+    activePointer.current = null;
     setDragging(false);
+    setPanning(false);
     if (g?.kind === "move") {
-      const p = positionsRef.current[g.id],
-        target = cancelled
-          ? g.start
-          : nearestPlacement(g.id, p, positionsRef.current);
-      settle(g.id, p, target);
+      const p = positionsRef.current[g.id];
+      settle(g.id, p, nearestPlacement(g.id, p, positionsRef.current));
     }
     if (svg.current?.hasPointerCapture(e.pointerId))
       svg.current.releasePointerCapture(e.pointerId);
@@ -554,6 +678,7 @@ export function Laboratory({
     setPointer(null);
   };
   const setInteractionMode = (next: Mode) => {
+    abortGesture();
     setMode(next);
     setDraft(null);
     setPointer(null);
@@ -566,6 +691,7 @@ export function Laboratory({
       px = b.width * (b.width < 760 ? 0.5 : 0.4),
       py = b.height * 0.45,
       zoom = Math.max(0.25, Math.min(2.4, c.zoom * ratio));
+    if (Math.abs(zoom - c.zoom) < 1e-8) return;
     animateCamera({
       zoom,
       x: px - ((px - c.x) * zoom) / c.zoom,
@@ -596,8 +722,17 @@ export function Laboratory({
   };
   return (
     <SimulationContext.Provider value={simulation}>
-      <section
-        className="lab-shell"
+      <motion.section
+        data-leaving={!isPresent}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{
+          duration: reducedMotion ? 0.12 : motionTiming.view,
+          ease: easeOut,
+        }}
+        style={{ pointerEvents: isPresent ? undefined : "none" }}
+        className={`lab-shell ${resetting ? "is-resetting" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label="Circuit laboratory"
@@ -608,26 +743,35 @@ export function Laboratory({
             href="#"
             onClick={(e) => {
               e.preventDefault();
-              onClose();
+              leaveLab();
             }}
           >
             junction.
           </a>
           <span>Circuit laboratory</span>
-          <button className="lab-return" onClick={onClose} autoFocus>
+          <button className="lab-return" onClick={leaveLab} autoFocus>
             <ArrowLeft size={14} /> Back to explanation
           </button>
         </header>
         <div className="lab-workspace" ref={canvas}>
           <svg
             ref={svg}
-            className={`lab-canvas mode-${mode} ${dragging ? "is-dragging" : ""}`}
+            className={`lab-canvas mode-${mode} ${dragging ? "is-dragging" : ""} ${panning ? "is-panning" : ""}`}
             aria-label="Isometric circuit building workspace"
             onPointerMove={pointerMove}
             onPointerUp={(e) => finishPointer(e)}
             onPointerCancel={(e) => finishPointer(e, true)}
+            onLostPointerCapture={(e) => {
+              if (activePointer.current === e.pointerId) abortGesture();
+            }}
             onPointerDown={(e) => {
-              if (e.button !== 0 && e.button !== 1) return;
+              if (
+                (e.button !== 0 && e.button !== 1) ||
+                activePointer.current !== null
+              )
+                return;
+              setPanning(true);
+              setHoveredTerminal(null);
               cancelAnimationFrame(cameraFrame.current);
               cameraFrame.current = 0;
               cameraTarget.current = cameraRef.current;
@@ -638,6 +782,7 @@ export function Laboratory({
                 client: { x: e.clientX, y: e.clientY },
                 camera: cameraRef.current,
               };
+              activePointer.current = e.pointerId;
               svg.current?.setPointerCapture(e.pointerId);
             }}
           >
@@ -657,25 +802,19 @@ export function Laboratory({
               transform={`translate(${camera.x} ${camera.y}) scale(${camera.zoom})`}
             >
               <Grid />
-              {hints &&
-                !circuit.valid &&
-                suggestedConnections
-                  .filter(
-                    (w) =>
-                      !connections.some((c) => sameConnection(c, w.from, w.to)),
-                  )
-                  .map((w, i) => (
-                    <path
-                      key={w.from}
-                      className="connection-hint"
-                      d={routeWire(w.from, w.to, positions, i)}
-                      fill="none"
-                      stroke="#c6c6c6"
-                      strokeDasharray="4 6"
-                      strokeWidth="1"
-                      pointerEvents="none"
-                    />
-                  ))}
+              {hintRequests.map((w) => (
+                <path
+                  key={w.id}
+                  className="connection-hint"
+                  d={wirePaths[w.id]}
+                  fill="none"
+                  stroke="#c6c6c6"
+                  strokeDasharray="4 6"
+                  strokeWidth="1"
+                  vectorEffect="non-scaling-stroke"
+                  pointerEvents="none"
+                />
+              ))}
               {connections.map((wire, i) => (
                 <g
                   key={wire.id}
@@ -685,30 +824,37 @@ export function Laboratory({
                   data-wire-id={wire.id}
                 >
                   <motion.path
-                    className="wire-visible"
-                    d={routeWire(wire.from, wire.to, positions, wire.lane ?? i)}
+                    className="wire-casing"
+                    d={wirePaths[wire.id]}
                     fill="none"
-                    stroke={selectedWire === wire.id ? "#111" : "#666"}
-                    strokeWidth={selectedWire === wire.id ? 2 : 1.3}
+                    stroke="#fff"
+                    strokeWidth={Math.min(3.8, 2 + camera.zoom * 0.8)}
+                    vectorEffect="non-scaling-stroke"
                     initial={{ pathLength: 0 }}
                     animate={{ pathLength: 1 }}
-                    transition={{ duration: 0.35 }}
+                    transition={{ duration: motionTiming.view }}
                   />
-                  {simulation.loopCurrentA > 0 && (
+                  <motion.path
+                    className="wire-visible"
+                    d={wirePaths[wire.id]}
+                    fill="none"
+                    stroke={selectedWire === wire.id ? "#111" : "#666"}
+                    strokeWidth={selectedWire === wire.id ? 1.7 : 1.2}
+                    vectorEffect="non-scaling-stroke"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: motionTiming.view }}
+                  />
+                  {simulation.loopCurrentA > 0 && isPresent && (
                     <path
                       className={`lab-current-pulse ${simulation.wireDirections[wire.id] === -1 ? "reverse" : ""}`}
-                      d={routeWire(
-                        wire.from,
-                        wire.to,
-                        positions,
-                        wire.lane ?? i,
-                      )}
+                      d={wirePaths[wire.id]}
                       pathLength="100"
                     />
                   )}
                   <path
                     className="wire-hit"
-                    d={routeWire(wire.from, wire.to, positions, wire.lane ?? i)}
+                    d={wirePaths[wire.id]}
                     fill="none"
                     stroke="transparent"
                     strokeWidth={14 / camera.zoom}
@@ -832,13 +978,28 @@ export function Laboratory({
                             (w) => w.from === t || w.to === t,
                           );
                         return (
-                          <g key={t}>
+                          <g key={t} className="instrument-terminal">
+                            <circle
+                              className="terminal-halo"
+                              cx={cx}
+                              cy={cy}
+                              r={Math.max(10 / camera.zoom, 7)}
+                              fill="none"
+                              stroke="#777"
+                              strokeWidth=".8"
+                              vectorEffect="non-scaling-stroke"
+                              pointerEvents="none"
+                            />
                             <circle
                               className={`terminal ${draft === t ? "pending" : ""}`}
                               data-terminal={t}
                               cx={cx}
                               cy={cy}
-                              r={mode === "wire" ? 6 : 3}
+                              r={
+                                mode === "wire"
+                                  ? Math.max(4 / camera.zoom, 5)
+                                  : Math.max(2 / camera.zoom, 2.5)
+                              }
                               fill={wired ? "#444" : "#fff"}
                               stroke={mode === "wire" ? "#333" : "#888"}
                               strokeWidth="1.2"
@@ -865,6 +1026,8 @@ export function Laboratory({
                                 role="button"
                                 tabIndex={0}
                                 aria-label={terminalNames[t]}
+                                onPointerEnter={() => setHoveredTerminal(t)}
+                                onPointerLeave={() => setHoveredTerminal(null)}
                                 onPointerDown={(e) => {
                                   e.stopPropagation();
                                   connect(t);
@@ -922,53 +1085,67 @@ export function Laboratory({
               </h1>
               <span>{connections.length} / 3</span>
             </div>
-            {mode === "inspect" && selected ? (
-              <>
-                <p>{instruments[selected].description}</p>
-                {selected === "junction" ? (
-                  <div className="junction-detail">
-                    <PresentationContext.Provider value={frozen}>
-                      <Junction
-                        showCarriers
-                        showIons
-                        selected={null}
-                        onSelect={noop}
-                        showCircuit={false}
-                        showGrid={false}
-                        interactive={false}
-                      />
-                    </PresentationContext.Provider>
-                    <span>Semiconductor cross-section · schematic</span>
-                  </div>
-                ) : (
-                  <div className="lab-reading">
+            <AnimatePresence initial={false} mode="wait">
+              {mode === "inspect" && selected && (
+                <motion.div
+                  key={selected}
+                  className="inspection-reveal"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{
+                    duration: reducedMotion ? 0 : motionTiming.panel,
+                    ease: easeOut,
+                  }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <p>{instruments[selected].description}</p>
+                  {selected === "junction" ? (
+                    <div className="junction-detail">
+                      <PresentationContext.Provider value={frozen}>
+                        <Junction
+                          showCarriers
+                          showIons
+                          selected={null}
+                          onSelect={noop}
+                          showCircuit={false}
+                          showGrid={false}
+                          interactive={false}
+                        />
+                      </PresentationContext.Provider>
+                      <span>Semiconductor cross-section · schematic</span>
+                    </div>
+                  ) : (
+                    <div className="lab-reading">
+                      <span>
+                        {selected === "supply" ? "Voltage setpoint" : "Current"}
+                      </span>
+                      <strong>
+                        {selected === "supply"
+                          ? `${simulation.solution.reverseVoltageV.toFixed(2)} V`
+                          : formatCurrent(simulation.ammeterCurrentA)}
+                      </strong>
+                    </div>
+                  )}
+                  <div className="lab-property">
+                    <span>Terminals</span>
                     <span>
-                      {selected === "supply" ? "Voltage setpoint" : "Current"}
-                    </span>
-                    <strong>
                       {selected === "supply"
-                        ? `${simulation.solution.reverseVoltageV.toFixed(2)} V`
-                        : formatCurrent(simulation.ammeterCurrentA)}
-                    </strong>
+                        ? "+ / −"
+                        : selected === "junction"
+                          ? "P / N"
+                          : "IN / OUT"}
+                    </span>
                   </div>
-                )}
-                <div className="lab-property">
-                  <span>Terminals</span>
-                  <span>
-                    {selected === "supply"
-                      ? "+ / −"
-                      : selected === "junction"
-                        ? "P / N"
-                        : "IN / OUT"}
-                  </span>
-                </div>
-              </>
-            ) : !circuit.valid ? (
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {mode !== "inspect" && !circuit.valid && (
               <p>
                 Place the instruments. Connect N to positive and P to negative,
                 with the ammeter in series.
               </p>
-            ) : null}
+            )}
             <div
               className={`circuit-feedback ${circuit.valid ? "ready" : ""}`}
               role="status"
@@ -1022,6 +1199,13 @@ export function Laboratory({
               </button>
               <button
                 onClick={() => {
+                  abortGesture();
+                  setResetting(true);
+                  if (resetTimer.current) clearTimeout(resetTimer.current);
+                  resetTimer.current = setTimeout(
+                    () => setResetting(false),
+                    250,
+                  );
                   setConnections([]);
                   setVoltage(0);
                   setDraft(null);
@@ -1030,11 +1214,29 @@ export function Laboratory({
                   setNotice("Circuit reset. Instrument positions preserved.");
                 }}
               >
-                <RotateCcw size={12} /> Reset circuit
+                <RotateCcw className="reset-icon" size={12} /> Reset circuit
               </button>
             </div>
             <ScientificPanel />
           </aside>
+          {hoveredTerminal && mode === "wire" && (
+            <div
+              className="lab-terminal-tooltip"
+              style={{
+                left:
+                  camera.x +
+                  project(...terminalPoint(hoveredTerminal, positions))[0] *
+                    camera.zoom,
+                top:
+                  camera.y +
+                  project(...terminalPoint(hoveredTerminal, positions))[1] *
+                    camera.zoom -
+                  22,
+              }}
+            >
+              {terminalNames[hoveredTerminal]}
+            </div>
+          )}
           {selectedWire && (
             <div className="wire-selection">
               <span>Connection selected</span>
@@ -1050,21 +1252,35 @@ export function Laboratory({
             </div>
           )}
           <div className="lab-camera-controls">
-            <button onClick={() => zoomBy(1 / 1.2)} aria-label="Zoom out">
+            <button
+              onClick={() => zoomBy(1 / 1.2)}
+              disabled={camera.zoom <= 0.25001}
+              aria-label="Zoom out"
+              title="Zoom out (−)"
+            >
               <Minus size={15} />
             </button>
             <span>{Math.round(camera.zoom * 100)}%</span>
-            <button onClick={() => zoomBy(1.2)} aria-label="Zoom in">
+            <button
+              onClick={() => zoomBy(1.2)}
+              disabled={camera.zoom >= 2.39999}
+              aria-label="Zoom in"
+              title="Zoom in (+)"
+            >
               <Plus size={15} />
             </button>
-            <button onClick={() => fit()} aria-label="Fit workspace">
+            <button
+              onClick={() => fit()}
+              aria-label="Fit workspace"
+              title="Fit workspace (0)"
+            >
               <Maximize size={14} />
             </button>
           </div>
           <div className="lab-help" aria-live="polite">
             {notice ||
               (ghost?.blocked
-                ? "Occupied space — release to settle on the nearest free grid point."
+                ? "Equipment blocks this move. Release to settle on a free grid point."
                 : draft
                   ? `From ${terminalNames[draft]}. Choose another terminal. Escape cancels.`
                   : mode === "move"
@@ -1074,7 +1290,7 @@ export function Laboratory({
                       : "Select an instrument to look closer · drag the grid to pan")}
           </div>
         </div>
-      </section>
+      </motion.section>
     </SimulationContext.Provider>
   );
 }

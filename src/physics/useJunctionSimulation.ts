@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useReducedMotion } from "motion/react";
 import { validateCircuit, traceCurrent, type Connection } from "../lab/circuit";
 import { solveJunction } from "./model";
 import type { SimulationSnapshot } from "./SimulationContext";
@@ -6,7 +7,9 @@ import type { SimulationSnapshot } from "./SimulationContext";
 export function useJunctionSimulation(
   requested: number,
   connections: Connection[],
+  enabled = true,
 ): SimulationSnapshot {
+  const reducedMotion = useReducedMotion();
   const circuit = useMemo(() => validateCircuit(connections), [connections]);
   const target =
     circuit.valid && Number.isFinite(requested)
@@ -16,12 +19,13 @@ export function useJunctionSimulation(
   const [rendered, setRendered] = useState(target),
     live = useRef(rendered);
   useEffect(() => {
+    if (!enabled) return;
     if (!circuit.valid) {
       live.current = 0;
       setRendered(0);
       return;
     }
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (reducedMotion) {
       live.current = target;
       setRendered(target);
       return;
@@ -39,7 +43,7 @@ export function useJunctionSimulation(
     };
     id = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(id);
-  }, [target, circuit.valid]);
+  }, [target, circuit.valid, enabled, reducedMotion]);
   return useMemo(() => {
     // An open circuit has no applied source voltage immediately, not a stale frame.
     const solution = solveJunction(circuit.valid ? rendered : 0),

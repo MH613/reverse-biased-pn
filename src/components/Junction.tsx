@@ -328,18 +328,23 @@ export function Junction({
         {carriers.map(({ x, y, phase }, i) => {
           const isP = x < 240;
           const minority = i === 10 || i === 29;
-          let dx = Math.sin(time * 0.55 + phase) * 5,
-            dy = Math.cos(time * 0.45 + phase) * 3;
+
           let cx = x;
-          if (stage > 0 && !physical)
-            cx = isP
-              ? Math.min(x, left - 13 - (i % 3) * 3)
-              : Math.max(x, right + 13 + (i % 3) * 3);
-          const p = project(cx + dx, y + dy, 64);
+          if (stage > 0 && !physical) {
+            const edge = isP
+              ? left - 13 - (i % 3) * 3
+              : right + 13 + (i % 3) * 3;
+            cx =
+              (x + edge + (isP ? -1 : 1) * Math.sqrt((x - edge) ** 2 + 9)) / 2;
+          }
+          const p = project(cx, y, 64);
           const hole = minority ? !isP : isP;
           const neutralOpacity = physical
             ? Math.max(0, Math.min(1, (isP ? left - x : x - right) / 12))
-            : 1;
+            : Math.max(
+                0,
+                Math.min(1, isP ? (left + 35 - x) / 35 : (x - right + 35) / 35),
+              );
           return (
             <g
               key={i}
@@ -353,34 +358,47 @@ export function Junction({
               }
               className="layer-fade"
             >
-              <circle
-                cx={p[0]}
-                cy={p[1]}
-                r={minority ? 3.5 : 4.7}
-                fill={hole ? "#ffffff" : "#333333"}
-                stroke="#333333"
-                strokeWidth="1.4"
-              />
-              {!hole && (
-                <path
-                  d={`M${p[0] - 1.6},${p[1]} h3.2`}
-                  stroke="#ffffff"
-                  strokeWidth=".8"
+              <g
+                className={physical ? undefined : "carrier-motion"}
+                style={{
+                  animationDelay: `-${phase * 1.2}s`,
+                  animationDuration: `${7 + (i % 5) * 0.7}s`,
+                  animationPlayState: presentation.playing
+                    ? "running"
+                    : "paused",
+                }}
+              >
+                <circle
+                  cx={p[0]}
+                  cy={p[1]}
+                  r={minority ? 3.5 : 4.7}
+                  fill={hole ? "#ffffff" : "#333333"}
+                  stroke="#333333"
+                  strokeWidth="1.4"
                 />
-              )}
-              {hole && (
-                <path
-                  d={`M${p[0] - 1.6},${p[1]} h3.2 M${p[0]},${p[1] - 1.6} v3.2`}
-                  stroke="#8f8f8f"
-                  strokeWidth=".8"
-                />
-              )}
+                {!hole && (
+                  <path
+                    d={`M${p[0] - 1.6},${p[1]} h3.2`}
+                    stroke="#ffffff"
+                    strokeWidth=".8"
+                  />
+                )}
+                {hole && (
+                  <path
+                    d={`M${p[0] - 1.6},${p[1]} h3.2 M${p[0]},${p[1] - 1.6} v3.2`}
+                    stroke="#8f8f8f"
+                    strokeWidth=".8"
+                  />
+                )}
+              </g>
             </g>
           );
         })}
       </g>
       {stage === 1 && (
-        <g opacity={Math.max(0, 1 - progress * 1.6)}>
+        <g
+          opacity={Math.min(1, progress * 16) * Math.max(0, 1 - progress * 1.6)}
+        >
           {[0, 1, 2, 3].map((i) => {
             const t = Math.min(1, progress * 3.2),
               x = 195 + 90 * t,
@@ -417,7 +435,6 @@ export function Junction({
               d={`M${a} L${b}`}
               markerEnd={`url(#field-arrow-${uid})`}
               strokeDasharray="3 4"
-              strokeDashoffset={-time * 6}
             />
           );
         })}
