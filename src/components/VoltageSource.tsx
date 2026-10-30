@@ -5,7 +5,10 @@ export const sourcePorts = {
   p: [387, -260, 10] as WorldPoint,
   n: [507, -260, 10] as WorldPoint,
 };
-export function VoltageSource() {
+export function VoltageSource({
+  reading,
+  kind = "supply",
+}: { reading?: string; kind?: "supply" | "ammeter" } = {}) {
   const { stage, voltage, bias } = usePresentation();
   const forward = stage === 2 && bias === "forward";
   const [x, y] = project(360, -260, 56);
@@ -15,7 +18,11 @@ export function VoltageSource() {
       stroke="#777777"
       strokeWidth=".9"
       strokeLinejoin="round"
-      aria-label="Isometric DC voltage source"
+      aria-label={
+        kind === "ammeter"
+          ? "Isometric digital ammeter"
+          : "Isometric DC voltage source"
+      }
     >
       <polygon
         className="source-top"
@@ -90,7 +97,8 @@ export function VoltageSource() {
           fill="#555555"
           stroke="none"
         >
-          {forward ? "+0.4" : `−${stage === 3 ? voltage.toFixed(1) : "2.0"}`} V
+          {reading ??
+            `${forward ? "+0.4" : `−${stage === 3 ? voltage.toFixed(1) : "2.0"}`} V`}
         </text>
         <circle cx="133" cy="23" r="10" fill="#fafafa" />
         <path d="M133,23 l4,-6" />
@@ -108,11 +116,23 @@ export function VoltageSource() {
           r="3.2"
           fill="#777777"
         />
-        <text x="38" y="49" fontSize="10" stroke="none" fill="#555555">
-          {forward ? "+" : "−"}
+        <text
+          x="38"
+          y="49"
+          fontSize={kind === "ammeter" ? "6" : "10"}
+          stroke="none"
+          fill="#555555"
+        >
+          {kind === "ammeter" ? "IN" : forward ? "+" : "−"}
         </text>
-        <text x="157" y="49" fontSize="10" stroke="none" fill="#555555">
-          {forward ? "−" : "+"}
+        <text
+          x="157"
+          y="49"
+          fontSize={kind === "ammeter" ? "6" : "10"}
+          stroke="none"
+          fill="#555555"
+        >
+          {kind === "ammeter" ? "OUT" : forward ? "−" : "+"}
         </text>
       </g>
     </g>

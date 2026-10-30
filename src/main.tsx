@@ -16,6 +16,11 @@ import {
 } from "lucide-react";
 import { Junction } from "./components/Junction";
 import {
+  Laboratory,
+  createLabSession,
+  type LabSession,
+} from "./lab/Laboratory";
+import {
   type BiasMode,
   PresentationContext,
   chapters,
@@ -59,6 +64,7 @@ function App() {
     bias,
     manualVoltage,
     reducedMotion,
+    !labOpen,
   );
   const navigationLock = useRef(0),
     touchStart = useRef<{ x: number; y: number } | null>(null);
@@ -155,7 +161,17 @@ function App() {
       setFullError("Full screen is unavailable in this browser.");
     }
   };
-  const closeLab = useCallback(() => setLabOpen(false), []);
+  const labSession = useRef<LabSession | null>(null);
+  if (!labSession.current) labSession.current = createLabSession();
+  const saveLabSession = useCallback((session: LabSession) => {
+    labSession.current = session;
+  }, []);
+  const closeLab = useCallback(() => {
+    setLabOpen(false);
+    requestAnimationFrame(() =>
+      document.querySelector<HTMLButtonElement>(".lab-button")?.focus(),
+    );
+  }, []);
   const handleVoltage = (e: React.FormEvent<HTMLInputElement>) => {
     setManualVoltage(Number(e.currentTarget.value));
     setPlaying(true);
@@ -188,7 +204,11 @@ function App() {
       <PresentationContext.Provider
         value={{ stage, ...frame, playing, bias, reducedMotion }}
       >
-        <div className={`app-shell ${home ? "is-home" : "is-presentation"}`}>
+        <div
+          className={`app-shell ${home ? "is-home" : "is-presentation"}`}
+          style={{ display: labOpen ? "none" : undefined }}
+          inert={labOpen}
+        >
           <header className="header">
             <a
               className="brand"
@@ -493,69 +513,16 @@ function App() {
               </button>
             </div>
           )}
-          {labOpen && <LabDialog onClose={closeLab} />}
         </div>
+        {labOpen && (
+          <Laboratory
+            onClose={closeLab}
+            initial={labSession.current}
+            onSessionChange={saveLabSession}
+          />
+        )}
       </PresentationContext.Provider>
     </MotionConfig>
-  );
-}
-function LabDialog({ onClose }: { onClose: () => void }) {
-  const dialog = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement;
-    dialog.current?.querySelector("button")?.focus();
-    const key = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "Tab") {
-        const buttons = dialog.current?.querySelectorAll("button");
-        if (!buttons) return;
-        const first = buttons[0],
-          last = buttons[buttons.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-    window.addEventListener("keydown", key);
-    return () => {
-      window.removeEventListener("keydown", key);
-      previous?.focus();
-    };
-  }, [onClose]);
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <motion.section
-        ref={dialog}
-        className="lab-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="lab-title"
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          className="modal-close icon-button"
-          onClick={onClose}
-          aria-label="Close laboratory preview"
-        >
-          <X size={20} />
-        </button>
-        <FlaskConical size={30} strokeWidth={1} />
-        <h2 id="lab-title">Room for discovery.</h2>
-        <p>
-          The circuit-building laboratory is coming in a later phase. For now,
-          explore the four moments that shape a PN junction.
-        </p>
-        <button className="primary-button" onClick={onClose}>
-          Back to the explanation <ArrowRight size={16} />
-        </button>
-      </motion.section>
-    </div>
   );
 }
 createRoot(document.getElementById("root")!).render(

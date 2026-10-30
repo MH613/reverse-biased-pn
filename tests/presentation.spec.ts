@@ -153,7 +153,9 @@ test("close-up overview flows into four working presentation stages", async ({
   expect(aligned).toBe(true);
   await page.getByRole("button", { name: "Laboratory", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
-  await page.keyboard.press("Escape");
+  await page
+    .getByRole("button", { name: "Back to explanation", exact: true })
+    .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByRole("button", { name: "Enter full screen" }).click();
   await expect

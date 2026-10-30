@@ -1,0 +1,579 @@
+.lab-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  color: #222;
+  font-family: Inter, Arial, sans-serif;
+}
+.lab-header {
+  height: 76px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 34px;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+  z-index: 5;
+}
+.lab-header > span {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: #888;
+  letter-spacing: -0.2px;
+}
+.lab-return {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  color: #666;
+}
+.lab-workspace {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: #fff;
+}
+.lab-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+.lab-canvas:active {
+  cursor: grabbing;
+}
+.lab-canvas.mode-wire {
+  cursor: crosshair;
+}
+.lab-canvas.mode-inspect {
+  cursor: default;
+}
+.lab-instrument {
+  cursor: grab;
+  outline: none;
+}
+.lab-instrument:focus-visible .instrument-hit {
+  stroke: #555;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 4;
+}
+.mode-inspect .lab-instrument {
+  cursor: pointer;
+}
+.mode-wire .lab-instrument {
+  cursor: crosshair;
+}
+.lab-artwork {
+  pointer-events: none;
+}
+.lab-artwork .junction-illustration {
+  width: 940px;
+  height: 600px;
+  overflow: visible;
+}
+.lab-artwork .figure-labels {
+  opacity: 1;
+}
+.terminal-hit,
+.wire-hit {
+  cursor: crosshair;
+}
+.wire-hit {
+  cursor: pointer;
+}
+.terminal {
+  transition:
+    r 0.15s,
+    fill 0.15s;
+  pointer-events: none;
+}
+.terminal.pending {
+  fill: #222;
+  stroke-width: 2;
+}
+.terminal-hit:focus-visible {
+  outline: none;
+  stroke: #111;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.lab-toolbar {
+  position: absolute;
+  left: 24px;
+  top: 26px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  padding: 5px;
+  background: #ffffffed;
+  gap: 4px;
+}
+.lab-toolbar button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 58px;
+  height: 57px;
+  border-radius: 4px;
+  color: #999;
+}
+.lab-toolbar button > span {
+  font-size: 9px;
+}
+.lab-toolbar button[aria-pressed="true"] {
+  background: #f1f1f1;
+  color: #222;
+}
+.lab-toolbar button:hover {
+  background: #f6f6f6;
+  color: #222;
+}
+.lab-panel {
+  position: absolute;
+  right: 24px;
+  top: 26px;
+  width: 272px;
+  padding: 23px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  background: #ffffffed;
+  backdrop-filter: blur(5px);
+  max-height: calc(100% - 110px);
+  overflow: auto;
+  scrollbar-width: thin;
+}
+.lab-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 17px;
+}
+.lab-panel h1 {
+  font:
+    500 18px/1.2 Inter,
+    Arial,
+    sans-serif;
+  letter-spacing: -0.65px;
+  margin: 0;
+  white-space: normal;
+}
+.lab-panel-heading > span {
+  font-size: 9px;
+  color: #aaa;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.lab-panel > p {
+  font-size: 11px;
+  line-height: 1.8;
+  color: #888;
+  margin: 0 0 17px;
+}
+.circuit-feedback {
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+  margin-top: 18px;
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+}
+.circuit-feedback p {
+  font-size: 10px;
+  line-height: 1.75;
+  color: #777;
+  margin: 0;
+}
+.circuit-indicator {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  margin-top: 2px;
+  color: #555;
+}
+.circuit-indicator > span {
+  width: 3px;
+  height: 3px;
+  background: #aaa;
+  border-radius: 50%;
+}
+.ready .circuit-indicator {
+  background: #333;
+  color: #fff;
+  border-color: #333;
+}
+.ready p {
+  color: #333;
+}
+.lab-voltage {
+  margin-top: 24px;
+}
+.lab-voltage > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.lab-voltage label {
+  font-size: 10px;
+  color: #777;
+}
+.lab-voltage output {
+  font-size: 20px;
+  letter-spacing: -0.6px;
+  font-variant-numeric: tabular-nums;
+}
+.lab-voltage output span {
+  font-size: 10px;
+  color: #999;
+  margin-left: 3px;
+}
+.lab-voltage input {
+  margin-top: 18px;
+}
+.lab-voltage input:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.lab-panel .lab-phase-note {
+  font-size: 9px;
+  line-height: 1.7;
+  margin: 17px 0;
+  color: #aaa;
+}
+.lab-panel-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 7px;
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+}
+.lab-panel-actions button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  color: #888;
+  padding: 0;
+}
+.lab-panel-actions button:hover {
+  color: #222;
+}
+.lab-camera-controls {
+  position: absolute;
+  bottom: 25px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  border: 1px solid #e8e8e8;
+  background: #ffffffed;
+  border-radius: 6px;
+  padding: 4px;
+  gap: 1px;
+}
+.lab-camera-controls button {
+  padding: 7px;
+  color: #777;
+  border-radius: 3px;
+}
+.lab-camera-controls button:hover {
+  background: #f4f4f4;
+}
+.lab-camera-controls > span {
+  font-size: 9px;
+  width: 39px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: #888;
+}
+.lab-help {
+  position: absolute;
+  bottom: 31px;
+  left: 27px;
+  font-size: 10px;
+  color: #999;
+  max-width: calc(100% - 300px);
+  pointer-events: none;
+  background: #ffffffbb;
+  padding: 4px 0;
+  line-height: 1.7;
+}
+.wire-selection {
+  position: absolute;
+  bottom: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 5px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.wire-selection > span {
+  color: #999;
+}
+.wire-selection button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  padding: 0;
+}
+.lab-reading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0 15px;
+  font-size: 10px;
+  color: #888;
+}
+.lab-reading strong {
+  font-size: 22px;
+  letter-spacing: -0.8px;
+  font-weight: 400;
+  color: #444;
+}
+.lab-property {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #999;
+  padding: 12px 0 0;
+}
+.lab-property > span:last-child {
+  color: #555;
+}
+.junction-detail {
+  margin: 15px -15px 10px;
+  overflow: hidden;
+  position: relative;
+}
+.junction-detail .junction-illustration {
+  width: 100%;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+}
+.junction-detail > span {
+  display: block;
+  font-size: 8px;
+  color: #aaa;
+  text-align: center;
+  margin-top: -15px;
+}
+.lab-instrument .layer-fade {
+  transition: none;
+}
+.lab-instrument.is-selected .instrument-selection {
+  opacity: 1;
+}
+.placement-ghost {
+  opacity: 0.8;
+}
+.lab-wire .wire-visible {
+  stroke-linejoin: miter;
+  stroke-linecap: round;
+}
+.lab-wire:focus-within .wire-visible {
+  stroke: #111;
+  stroke-width: 2;
+}
+@media (max-width: 1000px) and (min-width: 760px) {
+  .lab-header {
+    padding: 0 24px;
+  }
+  .lab-panel {
+    width: 240px;
+    padding: 18px;
+    right: 18px;
+  }
+  .lab-panel h1 {
+    font-size: 16px;
+  }
+  .lab-toolbar {
+    left: 18px;
+  }
+}
+@media (max-width: 759px) {
+  .lab-header {
+    height: 68px;
+    padding: 0 20px;
+  }
+  .lab-header .brand {
+    font-size: 22px;
+  }
+  .lab-header > span {
+    display: none;
+  }
+  .lab-return {
+    font-size: 10px;
+    gap: 7px;
+  }
+  .lab-toolbar {
+    left: 12px;
+    top: 12px;
+    flex-direction: row;
+    padding: 4px;
+    gap: 2px;
+  }
+  .lab-toolbar button {
+    width: 48px;
+    height: 43px;
+    gap: 4px;
+  }
+  .lab-toolbar button > span {
+    font-size: 8px;
+  }
+  .lab-toolbar button > svg {
+    width: 15px;
+    height: 15px;
+  }
+  .lab-panel {
+    top: auto;
+    bottom: 63px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: 225px;
+    padding: 16px 18px;
+    border-radius: 7px;
+  }
+  .lab-panel-heading {
+    margin-bottom: 10px;
+  }
+  .lab-panel h1 {
+    font-size: 16px;
+  }
+  .lab-panel > p {
+    font-size: 10px;
+    line-height: 1.7;
+    margin-bottom: 10px;
+  }
+  .circuit-feedback {
+    padding-top: 11px;
+    margin-top: 12px;
+  }
+  .circuit-feedback p {
+    font-size: 9px;
+  }
+  .lab-voltage {
+    margin-top: 17px;
+  }
+  .lab-voltage input {
+    margin-top: 16px;
+  }
+  .lab-panel .lab-phase-note {
+    font-size: 8px;
+    margin: 12px 0;
+  }
+  .lab-panel-actions {
+    padding-top: 12px;
+  }
+  .lab-camera-controls {
+    bottom: 18px;
+    right: 12px;
+  }
+  .lab-help {
+    bottom: 17px;
+    left: 14px;
+    max-width: 155px;
+    font-size: 8px;
+    line-height: 1.5;
+  }
+  .wire-selection {
+    bottom: 303px;
+    font-size: 9px;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  .wire-selection button {
+    font-size: 9px;
+  }
+  .junction-detail {
+    width: 250px;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+  .junction-detail .junction-illustration {
+    height: 160px;
+  }
+  .lab-panel:has(.junction-detail) {
+    max-height: 340px;
+  }
+  .lab-property {
+    padding-top: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .terminal {
+    transition: none;
+  }
+}
+@media (min-width: 760px) {
+  .lab-panel:has(.junction-detail) {
+    width: 400px;
+  }
+  .junction-detail {
+    height: 240px;
+    margin: 0 -12px 10px;
+  }
+  .junction-detail .junction-illustration {
+    height: 230px;
+    transform: scale(1.45);
+    transform-origin: 50% 43%;
+  }
+  .junction-detail > span {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    background: #fff;
+    padding-top: 5px;
+  }
+}
+@media (max-width: 759px) {
+  .junction-detail {
+    overflow: hidden;
+  }
+  .junction-detail .junction-illustration {
+    transform: scale(1.25);
+    transform-origin: 50% 43%;
+  }
+}
+.lab-shell .terminal-hit:focus-visible,
+.lab-shell .wire-hit:focus-visible {
+  outline: none;
+}
+.lab-shell .instrument-hit:focus-visible {
+  outline: none;
+  stroke: #555;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 4;
+}
+.lab-shell .instrument-hit,
+.lab-shell .terminal-hit,
+.lab-shell .wire-hit {
+  outline: none;
+}

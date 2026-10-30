@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { usePresentation } from "../state/presentation";
 import { project, points, wirePath, type WorldPoint } from "./isometric";
 import { VoltageSource, sourcePorts } from "./VoltageSource";
@@ -23,12 +23,21 @@ export function Junction({
   showCarriers,
   selected,
   onSelect,
+  embedded = false,
+  showCircuit = true,
+  showGrid = true,
+  interactive = true,
 }: {
+  embedded?: boolean;
+  showCircuit?: boolean;
+  showGrid?: boolean;
+  interactive?: boolean;
   showIons: boolean;
   showCarriers: boolean;
   selected: string | null;
   onSelect: (v: string | null) => void;
 }) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const { stage, time, progress } = usePresentation();
   const [hovered, setHovered] = useState<string | null>(null);
   const { width } = usePresentation();
@@ -57,16 +66,17 @@ export function Junction({
     [507, -260, -40],
     sourcePorts.n,
   ];
+  const Container = embedded ? "g" : "svg";
   return (
-    <svg
+    <Container
       className="junction-illustration"
-      viewBox="0 0 940 600"
+      viewBox={embedded ? undefined : "0 0 940 600"}
       role="img"
       aria-label="Isometric PN semiconductor junction: P type on the left, N type on the right, with a central depletion region. Electric field points from N to P."
     >
       <defs>
         <pattern
-          id="hatch"
+          id={`hatch-${uid}`}
           width="5"
           height="5"
           patternUnits="userSpaceOnUse"
@@ -75,7 +85,7 @@ export function Junction({
           <line x1="0" y1="0" x2="0" y2="5" stroke="#cdcdcd" strokeWidth=".6" />
         </pattern>
         <pattern
-          id="fine-dots"
+          id={`fine-dots-${uid}`}
           width="8"
           height="8"
           patternUnits="userSpaceOnUse"
@@ -83,7 +93,7 @@ export function Junction({
           <circle cx="1" cy="1" r=".55" fill="#bdbdbd" />
         </pattern>
         <marker
-          id="field-arrow"
+          id={`field-arrow-${uid}`}
           markerWidth="7"
           markerHeight="7"
           refX="5"
@@ -98,7 +108,7 @@ export function Junction({
           />
         </marker>
         <marker
-          id="small-arrow"
+          id={`small-arrow-${uid}`}
           markerWidth="6"
           markerHeight="6"
           refX="5"
@@ -110,6 +120,7 @@ export function Junction({
       </defs>
       <g
         className="drafting-ground"
+        style={{ display: showGrid ? undefined : "none" }}
         stroke="#e7e7e7"
         strokeWidth=".7"
         fill="none"
@@ -191,7 +202,7 @@ export function Junction({
             [480, 0, 0],
             [0, 0, 0],
           ])}
-          fill="url(#hatch)"
+          fill={`url(#hatch-${uid})`}
         />
         <polygon
           points={points([
@@ -223,7 +234,7 @@ export function Junction({
         />
         <polygon
           points={surface(left, right)}
-          fill="url(#fine-dots)"
+          fill={`url(#fine-dots-${uid})`}
           stroke="none"
           opacity=".65"
         />
@@ -253,7 +264,7 @@ export function Junction({
                 [x + 7, 0, 20],
                 [x - 7, 0, 20],
               ])}
-              fill="url(#hatch)"
+              fill={`url(#hatch-${uid})`}
             />
             {Array.from({ length: 15 }, (_, i) => (
               <path
@@ -385,7 +396,7 @@ export function Junction({
             <path
               key={i}
               d={`M${a} L${b}`}
-              markerEnd="url(#field-arrow)"
+              markerEnd={`url(#field-arrow-${uid})`}
               strokeDasharray="3 4"
               strokeDashoffset={-time * 6}
             />
@@ -425,6 +436,7 @@ export function Junction({
       </g>
       <g
         opacity={connected ? connection : 0}
+        style={{ display: showCircuit ? undefined : "none" }}
         className="layer-fade"
         strokeLinejoin="round"
       >
@@ -449,7 +461,12 @@ export function Junction({
         </g>
         <VoltageSource />
       </g>
-      <g className="svg-hit-regions" fill="transparent" stroke="none">
+      <g
+        className="svg-hit-regions"
+        fill="transparent"
+        stroke="none"
+        style={{ display: interactive ? undefined : "none" }}
+      >
         <polygon
           points={surface(0, left)}
           tabIndex={0}
@@ -487,6 +504,6 @@ export function Junction({
           }}
         />
       </g>
-    </svg>
+    </Container>
   );
 }

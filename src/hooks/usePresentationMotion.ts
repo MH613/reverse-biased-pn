@@ -7,6 +7,7 @@ export function usePresentationMotion(
   bias: BiasMode,
   manualVoltage: number | null,
   reducedMotion: boolean,
+  enabled = true,
 ) {
   const elapsed = useRef(0),
     clock = useRef(0),
@@ -20,6 +21,7 @@ export function usePresentationMotion(
     voltage: 0,
   });
   useEffect(() => {
+    if (!enabled) return;
     let id: number,
       previous = 0;
     const tick = (now: number) => {
@@ -53,7 +55,7 @@ export function usePresentationMotion(
     };
     id = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(id);
-  }, []);
+  }, [enabled]);
   const reset = useCallback(() => {
     elapsed.current = 0;
   }, []);
