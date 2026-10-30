@@ -15,7 +15,6 @@ import {
   X,
 } from "lucide-react";
 import { Junction } from "./components/Junction";
-import { FieldProfile } from "./components/FieldProfile";
 import {
   type BiasMode,
   PresentationContext,
@@ -174,8 +173,14 @@ function App() {
         : "18vh"
       : compact
         ? "5vh"
-        : `${[-1, -2, -3, -2][stage]}vh`,
-    scale: home ? 1.42 : compact ? 1.12 : [1.02, 1.07, 0.96, 1][stage],
+        : `${stage >= 2 ? -5 : [-1, -2][stage]}vh`,
+    scale: home
+      ? 1.42
+      : compact
+        ? stage >= 2
+          ? 0.98
+          : 1.12
+        : [1.02, 1.07, 0.96, 1][stage],
     rotate: home ? -4 : [-1, 1.5, -1.5, 0][stage],
   };
   return (
@@ -338,19 +343,6 @@ function App() {
                   </div>
                 )}
               </motion.section>
-            </AnimatePresence>
-            <AnimatePresence>
-              {!home && stage > 0 && (
-                <motion.div
-                  className="field-position"
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 15 }}
-                  transition={{ duration: 0.5, delay: 0.15 }}
-                >
-                  <FieldProfile />
-                </motion.div>
-              )}
             </AnimatePresence>
             <AnimatePresence>
               {selected && !home && (

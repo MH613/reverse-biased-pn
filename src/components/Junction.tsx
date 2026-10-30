@@ -1,14 +1,7 @@
 import { useState } from "react";
 import { usePresentation } from "../state/presentation";
-const project = (x: number, y: number, z = 60): [number, number] => [
-  190 + x * 0.96 + y * 0.7,
-  265 + x * 0.27 - y * 0.5 - z,
-];
-const points = (coords: number[][]) =>
-  coords
-    .map(([x, y, z]) => project(x, y, z))
-    .map((p) => p.join(","))
-    .join(" ");
+import { project, points, wirePath, type WorldPoint } from "./isometric";
+import { VoltageSource, sourcePorts } from "./VoltageSource";
 const surface = (left: number, right: number, z = 60) =>
   points([
     [left, 0, z],
@@ -36,7 +29,7 @@ export function Junction({
   selected: string | null;
   onSelect: (v: string | null) => void;
 }) {
-  const { stage, time, progress, voltage, bias } = usePresentation();
+  const { stage, time, progress } = usePresentation();
   const [hovered, setHovered] = useState<string | null>(null);
   const { width } = usePresentation();
   const left = 240 - width / 2,
@@ -44,8 +37,26 @@ export function Junction({
   const connected = stage >= 2;
   const connection = stage === 2 ? Math.min(1, progress * 3) : 1;
   const active = selected || hovered;
-  const terminalP = project(-18, 85, 45),
-    terminalN = project(498, 85, 45);
+  const wireP: WorldPoint[] = [
+    [0, 0, 36],
+    [0, -35, 36],
+    [0, -35, -40],
+    [80, -35, -40],
+    [80, -300, -40],
+    [387, -300, -40],
+    [387, -260, -40],
+    sourcePorts.p,
+  ];
+  const wireN: WorldPoint[] = [
+    [480, 0, 36],
+    [540, 0, 36],
+    [540, 0, -40],
+    [570, 0, -40],
+    [570, -280, -40],
+    [507, -280, -40],
+    [507, -260, -40],
+    sourcePorts.n,
+  ];
   return (
     <svg
       className="junction-illustration"
@@ -106,10 +117,10 @@ export function Junction({
         {[-120, -40, 40, 120, 200, 280, 360, 440, 520, 600].map((x) => (
           <path
             key={x}
-            d={`M${project(x, -120, -40)} L${project(x, 310, -40)}`}
+            d={`M${project(x, -340, -40)} L${project(x, 310, -40)}`}
           />
         ))}
-        {[-100, -20, 60, 140, 220, 300].map((y) => (
+        {[-340, -260, -180, -100, -20, 60, 140, 220, 300].map((y) => (
           <path
             key={y}
             d={`M${project(-100, y, -40)} L${project(590, y, -40)}`}
@@ -193,7 +204,12 @@ export function Junction({
         />
         <polygon points={surface(0, 240)} fill="#f6f6f6" />
         <polygon points={surface(240, 480)} fill="#f1f1f1" />
-        <polygon points={surface(left, right)} fill="#e5e5e5" stroke="none" />
+        <polygon
+          className="depletion-surface"
+          points={surface(left, right)}
+          fill="#e5e5e5"
+          stroke="none"
+        />
         <polygon
           points={points([
             [left, 0, 60],
@@ -413,75 +429,25 @@ export function Junction({
         strokeLinejoin="round"
       >
         <g
+          className="circuit-wires"
           fill="none"
-          strokeWidth="1.7"
-          strokeDasharray="1000"
-          strokeDashoffset={1000 * (1 - connection)}
+          stroke="#888888"
+          strokeWidth="1.25"
+          strokeLinecap="round"
+          strokeLinejoin="miter"
         >
-          <path
-            d={`M${terminalP} C140,310 110,415 230,448 S495,478 628,485`}
-            stroke="#8a8a8a"
-          />
-          <path
-            d={`M${terminalN} C825,259 873,360 829,429 S748,466 714,496`}
-            stroke="#868686"
-          />
-        </g>
-        <g transform="translate(589 411)" stroke="#6f6f6f" strokeWidth=".9">
-          <path d="M0,30 88,0 179,34 91,65 Z" fill="#fafafa" />
-          <path d="M0,30 91,65 91,117 0,82 Z" fill="#f1f1f1" />
-          <path d="M91,65 179,34 179,87 91,117 Z" fill="#e9e9e9" />
-          <path d="M12,38 72,61 72,87 12,64Z" fill="#e5e5e5" />
-          <text
-            x="20"
-            y="55"
-            transform="rotate(21 20 55)"
-            fontSize="13"
-            fill="#606060"
-            stroke="none"
-            fontFamily="Inter, sans-serif"
-          >
-            {bias === "forward" && stage === 2
-              ? "+0.4"
-              : `−${stage === 3 ? voltage.toFixed(1) : "2.0"}`}{" "}
-            V
-          </text>
-          <ellipse
-            cx="111"
-            cy="82"
-            rx="10"
-            ry="12"
-            transform="rotate(18 111 82)"
-            fill="#f7f7f7"
-          />
-          <path d="M111,81 l4,-7" />
-          <ellipse cx="39" cy="78" rx="4" ry="3" fill="#8a8a8a" />
-          <ellipse cx="125" cy="88" rx="4" ry="3" fill="#868686" />
-          <text x="23" y="78" stroke="none" fontSize="9">
-            {bias === "forward" && stage === 2 ? "+" : "−"}
-          </text>
-          <text x="136" y="87" stroke="none" fontSize="9">
-            {bias === "forward" && stage === 2 ? "−" : "+"}
-          </text>
-          <text
-            x="22"
-            y="28"
-            transform="rotate(-19 22 28)"
-            fontSize="8"
-            stroke="none"
-            letterSpacing="1.3"
-            fill="#7a7a7a"
-          >
-            DC
-          </text>
-          {[0, 1, 2, 3, 4].map((i) => (
+          {[wireP, wireN].map((route, i) => (
             <path
+              className="circuit-wire"
               key={i}
-              d={`M${145 + i * 4},${56 - i * 1.5} v16`}
-              stroke="#b2b2b2"
+              d={wirePath(route)}
+              pathLength="1"
+              strokeDasharray="1"
+              strokeDashoffset={1 - connection}
             />
           ))}
         </g>
+        <VoltageSource />
       </g>
       <g className="svg-hit-regions" fill="transparent" stroke="none">
         <polygon

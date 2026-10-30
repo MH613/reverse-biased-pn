@@ -52,7 +52,7 @@ test("close-up overview flows into four working presentation stages", async ({
   expect(await carriers()).not.toEqual(paused);
   await page.keyboard.press("ArrowRight");
   await expect(page.locator("h1")).toContainText("An invisible");
-  await expect(page.locator(".field-profile")).toBeVisible();
+  await expect(page.locator(".field-profile,.field-position")).toHaveCount(0);
   await page.getByRole("button", { name: "Skip to end of animation" }).click();
   await page.waitForTimeout(150);
   expect(
@@ -81,12 +81,76 @@ test("close-up overview flows into four working presentation stages", async ({
   await expect(page.locator("h1")).toContainText("A wider gap.");
   await page.getByRole("slider").fill("0");
   await page.waitForTimeout(1400);
-  const profile = page.locator(".field-profile svg path").nth(3);
-  const narrow = await profile.getAttribute("d");
+  const profile = page.locator(".depletion-surface");
+  const narrow = await profile.getAttribute("points");
   await page.getByRole("slider").fill("5");
   await page.waitForTimeout(1400);
   await expect(page.locator("output")).toHaveText("5.0 V");
-  expect(await profile.getAttribute("d")).not.toBe(narrow);
+  expect(await profile.getAttribute("points")).not.toBe(narrow);
+  await expect(page.locator(".source-readout")).toContainText("5.0 V");
+  const aligned = await page
+    .locator(".junction-illustration")
+    .evaluate((svg) => {
+      const vectors = [...svg.querySelectorAll(".drafting-ground path")].map(
+        (path) => {
+          const p = path as SVGPathElement,
+            a = p.getPointAtLength(0),
+            b = p.getPointAtLength(p.getTotalLength());
+          return { x: b.x - a.x, y: b.y - a.y };
+        },
+      );
+      const edges = (coords: number[]) =>
+        coords
+          .slice(2)
+          .filter((_, i) => i % 2 === 0)
+          .map((_, i) => ({
+            x: coords[(i + 1) * 2] - coords[i * 2],
+            y: coords[(i + 1) * 2 + 1] - coords[i * 2 + 1],
+          }));
+      const parallelToGrid = (d: { x: number; y: number }) =>
+        vectors.some(
+          (v) =>
+            Math.abs(d.x * v.y - d.y * v.x) /
+              (Math.hypot(d.x, d.y) * Math.hypot(v.x, v.y)) <
+            0.0001,
+        );
+      const routes = [...svg.querySelectorAll(".circuit-wire")];
+      const straight = routes.every((path) => {
+        const d = path.getAttribute("d")!;
+        return (
+          !/[CQSA]/i.test(d) &&
+          edges(d.match(/-?\d+(?:\.\d+)?/g)!.map(Number)).every(
+            (v) => Math.abs(v.x) < 0.0001 || parallelToGrid(v),
+          )
+        );
+      });
+      const top = svg
+        .querySelector(".source-top")!
+        .getAttribute("points")!
+        .match(/-?\d+(?:\.\d+)?/g)!
+        .map(Number);
+      const connected = routes.every((p, i) => {
+        const path = p as SVGPathElement,
+          end = path.getPointAtLength(path.getTotalLength());
+        const port = svg.querySelector(
+          i === 0 ? ".source-port-p" : ".source-port-n",
+        ) as SVGCircleElement;
+        const matrix = port
+          .parentElement!.getAttribute("transform")!
+          .match(/-?\d*\.?\d+/g)!
+          .map(Number);
+        const x = Number(port.getAttribute("cx")),
+          y = Number(port.getAttribute("cy"));
+        return (
+          Math.hypot(
+            end.x - (matrix[0] * x + matrix[2] * y + matrix[4]),
+            end.y - (matrix[1] * x + matrix[3] * y + matrix[5]),
+          ) < 0.01
+        );
+      });
+      return straight && connected && edges(top).every(parallelToGrid);
+    });
+  expect(aligned).toBe(true);
   await page.getByRole("button", { name: "Laboratory", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
