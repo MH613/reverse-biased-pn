@@ -85,9 +85,9 @@ test("close-up overview flows into four working presentation stages", async ({
   const narrow = await profile.getAttribute("points");
   await page.getByRole("slider").fill("5");
   await page.waitForTimeout(1400);
-  await expect(page.locator("output")).toHaveText("5.0 V");
+  await expect(page.locator("output")).toHaveText("5.00 V");
   expect(await profile.getAttribute("points")).not.toBe(narrow);
-  await expect(page.locator(".source-readout")).toContainText("5.0 V");
+  await expect(page.locator(".source-readout")).toContainText("5.00 V");
   const aligned = await page
     .locator(".junction-illustration")
     .evaluate((svg) => {
@@ -242,6 +242,6 @@ test("mobile, reduced motion, and desktop/projector layouts", async ({
       expect(collision).toBe(false);
     }
     await page.getByRole("slider").fill("3");
-    await expect(page.locator("output")).toHaveText("3.0 V");
+    await expect(page.locator("output")).toHaveText("3.00 V");
   }
 });

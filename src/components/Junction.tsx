@@ -1,5 +1,7 @@
 import { useId, useState } from "react";
 import { usePresentation } from "../state/presentation";
+import { useSimulation } from "../physics/SimulationContext";
+import { ILLUSTRATION_UNITS_PER_METRE } from "../physics/model";
 import { project, points, wirePath, type WorldPoint } from "./isometric";
 import { VoltageSource, sourcePorts } from "./VoltageSource";
 const surface = (left: number, right: number, z = 60) =>
@@ -40,9 +42,17 @@ export function Junction({
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const { stage, time, progress } = usePresentation();
   const [hovered, setHovered] = useState<string | null>(null);
-  const { width } = usePresentation();
-  const left = 240 - width / 2,
-    right = 240 + width / 2;
+  const presentation = usePresentation();
+  const simulation = useSimulation();
+  const physical = simulation?.solution;
+  const width = physical
+    ? physical.widthM * ILLUSTRATION_UNITS_PER_METRE
+    : presentation.width;
+  const fraction = physical
+    ? physical.xpM / physical.widthM
+    : (presentation.pFraction ?? 0.5);
+  const left = 240 - width * fraction,
+    right = 240 + width * (1 - fraction);
   const connected = stage >= 2;
   const connection = stage === 2 ? Math.min(1, progress * 3) : 1;
   const active = selected || hovered;
@@ -69,7 +79,10 @@ export function Junction({
   const Container = embedded ? "g" : "svg";
   return (
     <Container
-      className="junction-illustration"
+      className={`junction-illustration ${physical ? "has-physics" : ""}`}
+      data-depletion-width-m={physical?.widthM}
+      data-p-boundary-m={physical ? -physical.xpM : undefined}
+      data-n-boundary-m={physical?.xnM}
       viewBox={embedded ? undefined : "0 0 940 600"}
       role="img"
       aria-label="Isometric PN semiconductor junction: P type on the left, N type on the right, with a central depletion region. Electric field points from N to P."
@@ -282,10 +295,12 @@ export function Junction({
         className="layer-fade"
       >
         {atomGrid.map(({ x, y }, i) => {
+          if (physical && x < 240 && ((i % 22) + Math.floor(i / 22)) % 2)
+            return null;
           const exposed = x > left && x < right;
           const exposure = Math.max(
             0,
-            Math.min(1, (width / 2 - Math.abs(x - 240)) / 14 + 0.5),
+            Math.min(1, Math.min(x - left, right - x) / 14 + 0.5),
           );
           const p = project(x, y, 61);
           return (
@@ -316,21 +331,25 @@ export function Junction({
           let dx = Math.sin(time * 0.55 + phase) * 5,
             dy = Math.cos(time * 0.45 + phase) * 3;
           let cx = x;
-          if (stage > 0)
+          if (stage > 0 && !physical)
             cx = isP
               ? Math.min(x, left - 13 - (i % 3) * 3)
               : Math.max(x, right + 13 + (i % 3) * 3);
           const p = project(cx + dx, y + dy, 64);
           const hole = minority ? !isP : isP;
+          const neutralOpacity = physical
+            ? Math.max(0, Math.min(1, (isP ? left - x : x - right) / 12))
+            : 1;
           return (
             <g
               key={i}
               opacity={
-                active && active !== (hole ? "holes" : "electrons")
+                neutralOpacity *
+                (active && active !== (hole ? "holes" : "electrons")
                   ? 0.18
                   : minority
                     ? 0.65
-                    : 1
+                    : 1)
               }
               className="layer-fade"
             >
@@ -424,8 +443,8 @@ export function Junction({
               strokeWidth=".8"
             />
             <text
-              x={project(240, 176, 103)[0]}
-              y={project(240, 176, 103)[1]}
+              x={project((left + right) / 2, 176, 103)[0]}
+              y={project((left + right) / 2, 176, 103)[1]}
               textAnchor="middle"
               fontSize="10"
             >

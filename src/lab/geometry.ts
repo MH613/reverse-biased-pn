@@ -42,7 +42,7 @@ export const instruments: Record<
     scale: 1,
     origin: [360, -260, -4],
     description:
-      "Measures current when placed in series. A numerical current reading requires the Phase 3 simulation.",
+      "Measures conventional current entering IN and leaving OUT. The ideal reverse current is very small; reversing the meter leads changes its sign.",
   },
 };
 export const initialPositions: Positions = {

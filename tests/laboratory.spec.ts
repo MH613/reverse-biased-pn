@@ -92,10 +92,10 @@ test("wire, validate, inspect, disconnect, and retain the circuit across present
   await expect(page.locator(".lab-voltage output")).toContainText("3.2");
   await expect(
     page.locator('[data-instrument="supply"] .source-readout'),
-  ).toContainText("3.2 V");
+  ).toContainText("3.20 V");
   await expect(
     page.locator('[data-instrument="ammeter"] .source-readout'),
-  ).toHaveText("— A");
+  ).toHaveText("1.225 fA");
   await page.getByRole("button", { name: "Move", exact: true }).click();
   await dragWorld(page, "supply", -40, 40);
   await expect(page.locator(".circuit-feedback")).toContainText(
@@ -127,6 +127,11 @@ test("wire, validate, inspect, disconnect, and retain the circuit across present
   await expect(page.locator("h1")).toContainText("A small junction.");
   await page.getByRole("button", { name: "Laboratory", exact: true }).click();
   await expect(page.locator(".lab-wire")).toHaveCount(3);
+  expect(
+    Number(
+      await page.locator(".science-panel").getAttribute("data-applied-voltage"),
+    ),
+  ).toBe(3.2);
   await expect(page.locator(".lab-voltage output")).toContainText("3.2");
   const hit = page.getByRole("button", {
     name: "Select wire from Supply + to Ammeter IN",

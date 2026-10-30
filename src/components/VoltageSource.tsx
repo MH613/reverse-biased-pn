@@ -97,8 +97,7 @@ export function VoltageSource({
           fill="#555555"
           stroke="none"
         >
-          {reading ??
-            `${forward ? "+0.4" : `−${stage === 3 ? voltage.toFixed(1) : "2.0"}`} V`}
+          {reading ?? `${forward ? "+" : "−"}${voltage.toFixed(2)} V`}
         </text>
         <circle cx="133" cy="23" r="10" fill="#fafafa" />
         <path d="M133,23 l4,-6" />

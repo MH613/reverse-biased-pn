@@ -1,6 +1,6 @@
 # Junction
 
-An interactive field guide to PN junctions. Phases 1 and 2 include the four presentation stages and an interactive isometric circuit-building laboratory. Detailed semiconductor simulation remains reserved for Phase 3.
+An interactive field guide to PN junctions. Phases 1–3 include the presentation, interactive isometric circuit laboratory, and a quantitative abrupt-junction depletion model with synchronized scientific visualizations.
 
 ## Develop
 
@@ -41,9 +41,13 @@ Open **Laboratory** from any presentation stage. The lab uses the same monochrom
 - Drag empty grid to pan. Scroll to zoom around the cursor, or use the camera buttons and Fit workspace. Instrument movement and terminal coordinates account for camera zoom and pan.
 - Toggle optional connection hints. Reset circuit removes connections and the voltage setpoint while preserving instrument placement. Returning to the presentation and reopening the lab retains the session; refreshing the page starts a new one.
 
-A suggested reverse-bias loop is **Supply + → Ammeter IN → Ammeter OUT → Junction N → Junction P → Supply −**, where the ammeter and junction provide their own internal links. The ammeter may be in either leg, but must be in series. Circuit validation follows the actual terminal graph, checks polarity, and diagnoses missing connections, branches, supply shorts, and a bypassed ammeter. Moving equipment never changes this graph. Supply adjustment (0–5 V) unlocks only for a valid reverse-bias circuit and resets to zero when it becomes invalid.
+A suggested reverse-bias loop is **Supply + → Ammeter IN → Ammeter OUT → Junction N → Junction P → Supply −**, where the ammeter and junction provide their own internal links. The ammeter may be in either leg, but must be in series. Circuit validation follows the actual terminal graph, checks polarity, and diagnoses missing connections, branches, supply shorts, and a bypassed ammeter. Moving equipment never changes this graph. Supply adjustment (0–10 V) unlocks only for a valid reverse-bias circuit and resets to zero when it becomes invalid.
 
-The lab deliberately shows **— A** rather than fabricating a current measurement. Voltage is a setpoint only. There are no simulated current pulses, voltage-driven carrier dynamics, or scientific graphs in Phase 2. The presentation retains its existing conceptual animations.
+The lab now computes the actual depletion solution and ideal reverse diffusion current. Once wired correctly, use the voltage control to explore 0–10 V. The source, ammeter, isometric depletion boundaries, two scientific graphs, flat cross-section, and subtle conventional-current pulses share one applied-voltage state. The voltage control stays available while scrolling the scientific panel. Disconnecting immediately returns every view to equilibrium and disables voltage.
+
+The field graph has a toggleable equilibrium reference. The width graph covers the full 0–10 V range. Both use fixed, labeled physical axes. The ammeter’s sign follows its IN/OUT orientation; ideal leakage saturates near 1.225 fA and is exactly zero at zero bias.
+
+See [the physical model, fixed parameters, units, assumptions, and numerical reference table](docs/physics.md). No breakdown, displacement-current or transient drift–diffusion behavior is invented. Phase 4 has not been implemented.
 
 ## Architecture and scientific scope
 
@@ -56,6 +60,9 @@ The lab deliberately shows **— A** rather than fabricating a current measureme
 - `src/lab/circuit.ts`: geometry-independent terminal graph and validation.
 - `src/lab/geometry.ts`: grid placement, collision checks, terminal locations, and continuous wire routing.
 - `src/lab/Laboratory.tsx`: lab interactions, camera, instrument depth order, session state, and controls. Artwork and grid are memoized; pointer updates are coalesced per animation frame.
+- `src/physics/model.ts`: pure SI silicon physics and unit conversions.
+- `src/physics/useJunctionSimulation.ts`: one interpolated applied voltage and coherent derived snapshot.
+- `src/physics/ScientificPanel.tsx`: stable SVG field/width graphs and a physical cross-section.
 - `src/style.css`: visual tokens, responsive composition, typography, focus states, and reduced-motion styling.
 
-The diagrams are conceptual and not to scale. The normalized width follows `W ∝ sqrt(Vbi + Vr)` with an illustrative built-in potential of 0.7 V. No calibrated carrier dynamics, current solver, breakdown model, or circuit simulation is included in Phase 1. Fixed acceptor ions are negative on P; donor ions are positive on N. The internal field arrows point N to P. At equilibrium, electron diffusion is N to P and electron drift is P to N; hole motion is opposite.
+The equipment and lattice marks are schematic. Quantitative spatial axes, depletion boundaries, numerical measurements and graph profiles follow the documented SI model. Introductory carrier formation in the presentation remains a narrative illustration; it is not a transient device solver.

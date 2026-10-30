@@ -341,24 +341,23 @@ function App() {
                     <div>
                       <label htmlFor="voltage">Reverse voltage</label>
                       <output htmlFor="voltage">
-                        {(manualVoltage ?? frame.voltage).toFixed(1)}{" "}
-                        <span>V</span>
+                        {frame.voltage.toFixed(2)} <span>V</span>
                       </output>
                     </div>
                     <input
                       id="voltage"
                       type="range"
                       min="0"
-                      max="5"
+                      max="10"
                       step=".1"
                       value={manualVoltage ?? frame.voltage}
                       onChange={handleVoltage}
                       onInput={handleVoltage}
-                      aria-valuetext={`${(manualVoltage ?? frame.voltage).toFixed(1)} volts reverse bias`}
+                      aria-valuetext={`${frame.voltage.toFixed(2)} volts reverse bias`}
                     />
                     <div className="range-ends">
                       <span>0 V</span>
-                      <span>5 V</span>
+                      <span>10 V</span>
                     </div>
                   </div>
                 )}

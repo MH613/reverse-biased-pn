@@ -1,0 +1,329 @@
+.science-panel {
+  border-top: 1px solid #e8e8e8;
+  margin-top: 21px;
+  padding-top: 19px;
+}
+.science-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 17px;
+}
+.science-heading h2 {
+  font:
+    500 16px Inter,
+    Arial,
+    sans-serif;
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+.science-heading > span {
+  font-size: 8px;
+  color: #aaa;
+}
+.science-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 19px;
+}
+.science-metrics > div > span {
+  font-size: 9px;
+  color: #999;
+  display: block;
+  margin-bottom: 7px;
+}
+.science-metrics strong {
+  font-size: 21px;
+  font-weight: 400;
+  letter-spacing: -0.7px;
+  font-variant-numeric: tabular-nums;
+}
+.science-metrics small {
+  font-size: 9px;
+  color: #888;
+  letter-spacing: 0;
+}
+.science-chart {
+  margin: 17px 0;
+}
+.chart-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 7px;
+}
+.chart-heading h3 {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: -0.25px;
+  margin: 0;
+}
+.chart-heading > span {
+  font-size: 8px;
+  color: #aaa;
+  font-variant-numeric: tabular-nums;
+}
+.chart-heading label {
+  font-size: 8px;
+  color: #999;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.chart-heading input {
+  appearance: auto;
+  accent-color: #555;
+  width: 10px;
+  height: 10px;
+  margin: 0;
+}
+.science-panel svg {
+  width: 100%;
+  display: block;
+  overflow: visible;
+}
+.science-panel svg text {
+  font:
+    8px Inter,
+    Arial,
+    sans-serif;
+  fill: #999;
+  font-variant-numeric: tabular-nums;
+}
+.science-panel svg .axis-unit {
+  fill: #777;
+  font-size: 8px;
+}
+.chart-grid {
+  stroke: #ededed;
+  stroke-width: 0.6;
+  fill: none;
+}
+.chart-axis {
+  stroke: #bbb;
+  stroke-width: 0.7;
+  fill: none;
+}
+.junction-axis {
+  stroke: #b8b8b8;
+  stroke-dasharray: 3 4;
+  stroke-width: 0.7;
+  fill: none;
+}
+.equilibrium-reference {
+  stroke: #aaa;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  fill: none;
+}
+.field-area {
+  fill: #00000006;
+  stroke: none;
+}
+.field-operating-profile,
+.width-curve {
+  fill: none;
+  stroke: #555;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+.field-peak-marker,
+.width-operating-point {
+  fill: #333;
+  stroke: #fff;
+  stroke-width: 1;
+}
+.operating-guide {
+  stroke: #aaa;
+  stroke-dasharray: 3 3;
+  stroke-width: 0.7;
+  fill: none;
+}
+.section-p-boundary,
+.section-n-boundary {
+  stroke: #666;
+  stroke-width: 0.9;
+  fill: none;
+}
+.science-panel svg .section-ion {
+  font-size: 12px;
+  fill: #666;
+}
+.science-section {
+  margin-top: 17px;
+}
+.science-current {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #eee;
+  padding-top: 13px;
+  margin-top: 15px;
+  font-size: 9px;
+  color: #999;
+  align-items: center;
+}
+.science-current strong {
+  font-weight: 400;
+  color: #555;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.model-notes {
+  margin-top: 14px;
+  color: #aaa;
+  font-size: 9px;
+  line-height: 1.8;
+}
+.model-notes summary {
+  cursor: pointer;
+  font-size: 9px;
+  color: #888;
+}
+.model-notes p {
+  margin: 10px 0;
+}
+.source-readout {
+  font-variant-numeric: tabular-nums;
+}
+.lab-voltage-status {
+  display: flex;
+  justify-content: space-between;
+  font-size: 8px;
+  color: #aaa;
+  margin-top: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.lab-current-pulse {
+  stroke: #333;
+  stroke-width: 1.5;
+  fill: none;
+  opacity: 0.23;
+  stroke-linecap: round;
+  stroke-dasharray: 1 39;
+  animation: current-pulse 8s linear infinite;
+  pointer-events: none;
+}
+.lab-current-pulse.reverse {
+  animation-direction: reverse;
+}
+@keyframes current-pulse {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+.lab-panel:has(.science-panel) {
+  width: 365px;
+  padding: 22px;
+  max-height: calc(100% - 100px);
+}
+.lab-panel:has(.science-panel) .lab-panel-heading {
+  margin-bottom: 10px;
+}
+.lab-panel:has(.science-panel) > p {
+  font-size: 10px;
+  line-height: 1.7;
+  margin-bottom: 10px;
+}
+.lab-panel:has(.science-panel) .circuit-feedback {
+  padding-top: 11px;
+  margin-top: 12px;
+}
+.lab-panel:has(.science-panel) .lab-voltage {
+  margin-top: 18px;
+}
+.lab-panel:has(.science-panel) .lab-phase-note {
+  font-size: 8px;
+  margin: 10px 0 14px;
+}
+.lab-panel:has(.science-panel) .lab-panel-actions {
+  padding-top: 12px;
+}
+.lab-panel:has(.science-panel):has(.junction-detail) {
+  width: 400px;
+}
+@media (max-width: 1000px) and (min-width: 760px) {
+  .lab-panel:has(.science-panel) {
+    width: 320px;
+    padding: 18px;
+  }
+  .chart-heading h3 {
+    font-size: 9px;
+  }
+  .chart-heading > span {
+    font-size: 7px;
+  }
+}
+@media (max-width: 759px) {
+  .lab-panel:has(.science-panel) {
+    width: auto;
+    padding: 15px 18px;
+    max-height: 43%;
+    bottom: 63px;
+  }
+  .lab-panel:has(.science-panel):has(.junction-detail) {
+    width: auto;
+    max-height: 58%;
+  }
+  .science-heading h2 {
+    font-size: 15px;
+  }
+  .science-metrics strong {
+    font-size: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lab-current-pulse {
+    display: none;
+  }
+}
+.junction-illustration.has-physics .layer-fade {
+  transition: none;
+}
+.lab-panel:has(.science-panel) {
+  width: 392px;
+}
+.lab-panel:has(.science-panel) .lab-voltage {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: #fff;
+  padding: 12px 0 8px;
+}
+.science-panel svg text {
+  font-size: 9px;
+}
+.science-panel svg .axis-unit {
+  font-size: 9px;
+}
+@media (max-width: 1000px) and (min-width: 760px) {
+  .lab-panel:has(.science-panel) {
+    width: 320px;
+  }
+}
+@media (max-width: 759px) {
+  .lab-panel:has(.science-panel) {
+    width: auto;
+  }
+  .lab-panel:has(.science-panel) .lab-voltage {
+    padding-top: 10px;
+  }
+}
+.lab-panel:has(.science-panel) .lab-voltage {
+  top: -22px;
+}
+@media (max-width: 1000px) and (min-width: 760px) {
+  .lab-panel:has(.science-panel) .lab-voltage {
+    top: -18px;
+  }
+}
+@media (max-width: 759px) {
+  .lab-panel:has(.science-panel) .lab-voltage {
+    top: -15px;
+  }
+}

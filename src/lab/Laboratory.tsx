@@ -45,6 +45,14 @@ import {
   routeWire,
 } from "./geometry";
 import "./laboratory.css";
+import { SimulationContext, useSimulation } from "../physics/SimulationContext";
+import { useJunctionSimulation } from "../physics/useJunctionSimulation";
+import { ScientificPanel } from "../physics/ScientificPanel";
+import {
+  formatCurrent,
+  EQUILIBRIUM,
+  widthToIllustration,
+} from "../physics/model";
 export interface LabSession {
   positions: Positions;
   connections: Connection[];
@@ -72,7 +80,8 @@ const frozen: PresentationState = {
   bias: "reverse",
   playing: false,
   reducedMotion: true,
-  width: 98,
+  width: widthToIllustration(EQUILIBRIUM.widthM),
+  pFraction: 2 / 3,
 };
 const noop = () => {};
 const ids = Object.keys(instruments) as InstrumentId[];
@@ -90,13 +99,8 @@ const Grid = memo(function Grid() {
     </g>
   );
 });
-const Artwork = memo(function Artwork({
-  id,
-  voltage,
-}: {
-  id: InstrumentId;
-  voltage: number;
-}) {
+const Artwork = memo(function Artwork({ id }: { id: InstrumentId }) {
+  const simulation = useSimulation()!;
   const info = instruments[id],
     origin = project(...info.origin),
     s = info.scale;
@@ -121,7 +125,11 @@ const Artwork = memo(function Artwork({
         ) : (
           <VoltageSource
             kind={id === "ammeter" ? "ammeter" : "supply"}
-            reading={id === "ammeter" ? "— A" : `${voltage.toFixed(1)} V`}
+            reading={
+              id === "ammeter"
+                ? formatCurrent(simulation.ammeterCurrentA)
+                : `${simulation.solution.reverseVoltageV.toFixed(2)} V`
+            }
           />
         )}
       </PresentationContext.Provider>
@@ -168,7 +176,8 @@ export function Laboratory({
     cameraTarget = useRef(camera),
     bounds = useRef({ left: 0, top: 0, width: 1000, height: 700 }),
     serial = useRef(0);
-  const circuit = validateCircuit(connections);
+  const simulation = useJunctionSimulation(voltage, connections);
+  const circuit = simulation.circuit;
   positionsRef.current = positions;
   draftRef.current = draft;
   connectionsRef.current = connections;
@@ -204,7 +213,7 @@ export function Laboratory({
       minY = Math.min(...ys),
       maxY = Math.max(...ys);
     const mobile = b.width < 760,
-      availableW = b.width - (mobile ? 36 : 390),
+      availableW = b.width - (mobile ? 36 : 480),
       availableH = b.height - (mobile ? 330 : 160);
     const zoom = Math.max(
       0.25,
@@ -212,7 +221,7 @@ export function Laboratory({
     );
     const next = {
       x:
-        (mobile ? b.width / 2 : (b.width - 290) / 2) -
+        (mobile ? b.width / 2 : (b.width - 390) / 2) -
         ((minX + maxX) / 2) * zoom,
       y:
         (mobile ? b.height * 0.36 : b.height * 0.48) -
@@ -586,459 +595,486 @@ export function Laboratory({
     return `M${project(...a)} L${project(a[0], out, a[2])} L${project(a[0], out, 0)} L${project(pointer.x, out, 0)} L${project(pointer.x, pointer.y, 0)}`;
   };
   return (
-    <section
-      className="lab-shell"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Circuit laboratory"
-    >
-      <header className="lab-header">
-        <a
-          className="brand"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            onClose();
-          }}
-        >
-          junction.
-        </a>
-        <span>Circuit laboratory</span>
-        <button className="lab-return" onClick={onClose} autoFocus>
-          <ArrowLeft size={14} /> Back to explanation
-        </button>
-      </header>
-      <div className="lab-workspace" ref={canvas}>
-        <svg
-          ref={svg}
-          className={`lab-canvas mode-${mode} ${dragging ? "is-dragging" : ""}`}
-          aria-label="Isometric circuit building workspace"
-          onPointerMove={pointerMove}
-          onPointerUp={(e) => finishPointer(e)}
-          onPointerCancel={(e) => finishPointer(e, true)}
-          onPointerDown={(e) => {
-            if (e.button !== 0 && e.button !== 1) return;
-            cancelAnimationFrame(cameraFrame.current);
-            cameraFrame.current = 0;
-            cameraTarget.current = cameraRef.current;
-            setSelected(null);
-            setSelectedWire(null);
-            gesture.current = {
-              kind: "pan",
-              client: { x: e.clientX, y: e.clientY },
-              camera: cameraRef.current,
-            };
-            svg.current?.setPointerCapture(e.pointerId);
-          }}
-        >
-          <defs>
-            <pattern
-              id="blocked-placement"
-              width="7"
-              height="7"
-              patternUnits="userSpaceOnUse"
-              patternTransform="rotate(30)"
-            >
-              <path d="M0,0 V7" stroke="#777" strokeWidth="1" />
-            </pattern>
-          </defs>
-          <g
-            className="lab-camera"
-            transform={`translate(${camera.x} ${camera.y}) scale(${camera.zoom})`}
+    <SimulationContext.Provider value={simulation}>
+      <section
+        className="lab-shell"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Circuit laboratory"
+      >
+        <header className="lab-header">
+          <a
+            className="brand"
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              onClose();
+            }}
           >
-            <Grid />
-            {hints &&
-              !circuit.valid &&
-              suggestedConnections
-                .filter(
-                  (w) =>
-                    !connections.some((c) => sameConnection(c, w.from, w.to)),
-                )
-                .map((w, i) => (
-                  <path
-                    key={w.from}
-                    className="connection-hint"
-                    d={routeWire(w.from, w.to, positions, i)}
-                    fill="none"
-                    stroke="#c6c6c6"
-                    strokeDasharray="4 6"
-                    strokeWidth="1"
-                    pointerEvents="none"
-                  />
-                ))}
-            {connections.map((wire, i) => (
-              <g
-                key={wire.id}
-                className={
-                  selectedWire === wire.id ? "lab-wire selected" : "lab-wire"
-                }
-                data-wire-id={wire.id}
+            junction.
+          </a>
+          <span>Circuit laboratory</span>
+          <button className="lab-return" onClick={onClose} autoFocus>
+            <ArrowLeft size={14} /> Back to explanation
+          </button>
+        </header>
+        <div className="lab-workspace" ref={canvas}>
+          <svg
+            ref={svg}
+            className={`lab-canvas mode-${mode} ${dragging ? "is-dragging" : ""}`}
+            aria-label="Isometric circuit building workspace"
+            onPointerMove={pointerMove}
+            onPointerUp={(e) => finishPointer(e)}
+            onPointerCancel={(e) => finishPointer(e, true)}
+            onPointerDown={(e) => {
+              if (e.button !== 0 && e.button !== 1) return;
+              cancelAnimationFrame(cameraFrame.current);
+              cameraFrame.current = 0;
+              cameraTarget.current = cameraRef.current;
+              setSelected(null);
+              setSelectedWire(null);
+              gesture.current = {
+                kind: "pan",
+                client: { x: e.clientX, y: e.clientY },
+                camera: cameraRef.current,
+              };
+              svg.current?.setPointerCapture(e.pointerId);
+            }}
+          >
+            <defs>
+              <pattern
+                id="blocked-placement"
+                width="7"
+                height="7"
+                patternUnits="userSpaceOnUse"
+                patternTransform="rotate(30)"
               >
-                <motion.path
-                  className="wire-visible"
-                  d={routeWire(wire.from, wire.to, positions, wire.lane ?? i)}
-                  fill="none"
-                  stroke={selectedWire === wire.id ? "#111" : "#666"}
-                  strokeWidth={selectedWire === wire.id ? 2 : 1.3}
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{ duration: 0.35 }}
-                />
-                <path
-                  className="wire-hit"
-                  d={routeWire(wire.from, wire.to, positions, wire.lane ?? i)}
-                  fill="none"
-                  stroke="transparent"
-                  strokeWidth={14 / camera.zoom}
-                  onPointerDown={(e) => {
-                    e.stopPropagation();
-                    setSelectedWire(wire.id);
-                    setSelected(null);
-                    setDraft(null);
-                    setPointer(null);
-                    setNotice("");
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Select wire from ${terminalNames[wire.from]} to ${terminalNames[wire.to]}`}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      setSelectedWire(wire.id);
-                    }
-                  }}
-                />
-              </g>
-            ))}
-            {draft && pointer && (
-              <path
-                className="pending-wire"
-                d={pendingPath()}
-                fill="none"
-                stroke="#555"
-                strokeWidth="1.4"
-                strokeDasharray="5 4"
-                pointerEvents="none"
-              />
-            )}
-            {ghost && (
-              <g className="placement-ghost" pointerEvents="none">
-                <g
-                  opacity=".14"
-                  transform={`translate(${project(ghost.position.x, ghost.position.y, 0)})`}
-                >
-                  <Artwork
-                    id={ghost.id}
-                    voltage={ghost.id === "supply" ? voltage : 0}
-                  />
-                </g>
-                <polygon
-                  points={points(footprint(ghost.position, ghost.id, 2))}
-                  fill={ghost.blocked ? "url(#blocked-placement)" : "#00000007"}
-                  fillOpacity={ghost.blocked ? 0.12 : 1}
-                  stroke="#666"
-                  strokeWidth="1"
-                  strokeDasharray="4 4"
-                />
-              </g>
-            )}
-            {drawn.map((id) => {
-              const info = instruments[id],
-                p = project(positions[id].x, positions[id].y, 0),
-                h = id === "junction" ? 40 : 60;
-              const hit = [
-                [0, 0, 0],
-                [info.width, 0, 0],
-                [info.width, info.depth, 0],
-                [info.width, info.depth, h],
-                [0, info.depth, h],
-                [0, 0, h],
-              ]
-                .map(([x, y, z]) => relative(x, y, z))
-                .join(" ");
-              return (
-                <g
-                  key={id}
-                  data-instrument={id}
-                  className={`lab-instrument ${selected === id ? "is-selected" : ""}`}
-                  transform={`translate(${p})`}
-                  onPointerDown={(e) => startMove(e, id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setSelected(id);
-                      setSelectedWire(null);
-                    }
-                  }}
-                >
-                  <polygon
-                    className="instrument-hit"
-                    points={hit}
-                    fill="transparent"
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`Select ${info.name}`}
-                  />
-                  {selected === id && (
-                    <polygon
-                      className="instrument-selection"
-                      points={footprint({ x: 0, y: 0 }, id, 6)
-                        .map(([x, y, z]) => relative(x, y, z))
-                        .join(" ")}
-                      fill="#00000003"
-                      stroke="#999"
+                <path d="M0,0 V7" stroke="#777" strokeWidth="1" />
+              </pattern>
+            </defs>
+            <g
+              className="lab-camera"
+              transform={`translate(${camera.x} ${camera.y}) scale(${camera.zoom})`}
+            >
+              <Grid />
+              {hints &&
+                !circuit.valid &&
+                suggestedConnections
+                  .filter(
+                    (w) =>
+                      !connections.some((c) => sameConnection(c, w.from, w.to)),
+                  )
+                  .map((w, i) => (
+                    <path
+                      key={w.from}
+                      className="connection-hint"
+                      d={routeWire(w.from, w.to, positions, i)}
+                      fill="none"
+                      stroke="#c6c6c6"
+                      strokeDasharray="4 6"
                       strokeWidth="1"
-                      strokeDasharray="3 4"
                       pointerEvents="none"
                     />
+                  ))}
+              {connections.map((wire, i) => (
+                <g
+                  key={wire.id}
+                  className={
+                    selectedWire === wire.id ? "lab-wire selected" : "lab-wire"
+                  }
+                  data-wire-id={wire.id}
+                >
+                  <motion.path
+                    className="wire-visible"
+                    d={routeWire(wire.from, wire.to, positions, wire.lane ?? i)}
+                    fill="none"
+                    stroke={selectedWire === wire.id ? "#111" : "#666"}
+                    strokeWidth={selectedWire === wire.id ? 2 : 1.3}
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.35 }}
+                  />
+                  {simulation.loopCurrentA > 0 && (
+                    <path
+                      className={`lab-current-pulse ${simulation.wireDirections[wire.id] === -1 ? "reverse" : ""}`}
+                      d={routeWire(
+                        wire.from,
+                        wire.to,
+                        positions,
+                        wire.lane ?? i,
+                      )}
+                      pathLength="100"
+                    />
                   )}
-                  <Artwork id={id} voltage={id === "supply" ? voltage : 0} />
+                  <path
+                    className="wire-hit"
+                    d={routeWire(wire.from, wire.to, positions, wire.lane ?? i)}
+                    fill="none"
+                    stroke="transparent"
+                    strokeWidth={14 / camera.zoom}
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                      setSelectedWire(wire.id);
+                      setSelected(null);
+                      setDraft(null);
+                      setPointer(null);
+                      setNotice("");
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Select wire from ${terminalNames[wire.from]} to ${terminalNames[wire.to]}`}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        setSelectedWire(wire.id);
+                      }
+                    }}
+                  />
                 </g>
-              );
-            })}
-            {drawn.map((id) => {
-              return (
-                <g className="instrument-terminals" key={id}>
-                  {terminals
-                    .filter((t) => owner(t) === id)
-                    .map((t) => {
-                      const q = terminalPoint(t, positions),
-                        c = project(...q),
-                        cx = c[0],
-                        cy = c[1],
-                        wired = connections.some(
-                          (w) => w.from === t || w.to === t,
-                        );
-                      return (
-                        <g key={t}>
-                          <circle
-                            className={`terminal ${draft === t ? "pending" : ""}`}
-                            data-terminal={t}
-                            cx={cx}
-                            cy={cy}
-                            r={mode === "wire" ? 6 : 3}
-                            fill={wired ? "#444" : "#fff"}
-                            stroke={mode === "wire" ? "#333" : "#888"}
-                            strokeWidth="1.2"
-                            pointerEvents="none"
-                          />
-                          {id === "junction" && (
-                            <text
-                              x={cx + 9}
-                              y={cy + 4}
-                              fontSize="10"
-                              fill="#666"
-                              pointerEvents="none"
-                            >
-                              {t.endsWith(":p") ? "P" : "N"}
-                            </text>
-                          )}
-                          {mode === "wire" && (
+              ))}
+              {draft && pointer && (
+                <path
+                  className="pending-wire"
+                  d={pendingPath()}
+                  fill="none"
+                  stroke="#555"
+                  strokeWidth="1.4"
+                  strokeDasharray="5 4"
+                  pointerEvents="none"
+                />
+              )}
+              {ghost && (
+                <g className="placement-ghost" pointerEvents="none">
+                  <g
+                    opacity=".14"
+                    transform={`translate(${project(ghost.position.x, ghost.position.y, 0)})`}
+                  >
+                    <Artwork id={ghost.id} />
+                  </g>
+                  <polygon
+                    points={points(footprint(ghost.position, ghost.id, 2))}
+                    fill={
+                      ghost.blocked ? "url(#blocked-placement)" : "#00000007"
+                    }
+                    fillOpacity={ghost.blocked ? 0.12 : 1}
+                    stroke="#666"
+                    strokeWidth="1"
+                    strokeDasharray="4 4"
+                  />
+                </g>
+              )}
+              {drawn.map((id) => {
+                const info = instruments[id],
+                  p = project(positions[id].x, positions[id].y, 0),
+                  h = id === "junction" ? 40 : 60;
+                const hit = [
+                  [0, 0, 0],
+                  [info.width, 0, 0],
+                  [info.width, info.depth, 0],
+                  [info.width, info.depth, h],
+                  [0, info.depth, h],
+                  [0, 0, h],
+                ]
+                  .map(([x, y, z]) => relative(x, y, z))
+                  .join(" ");
+                return (
+                  <g
+                    key={id}
+                    data-instrument={id}
+                    className={`lab-instrument ${selected === id ? "is-selected" : ""}`}
+                    transform={`translate(${p})`}
+                    onPointerDown={(e) => startMove(e, id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelected(id);
+                        setSelectedWire(null);
+                      }
+                    }}
+                  >
+                    <polygon
+                      className="instrument-hit"
+                      points={hit}
+                      fill="transparent"
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Select ${info.name}`}
+                    />
+                    {selected === id && (
+                      <polygon
+                        className="instrument-selection"
+                        points={footprint({ x: 0, y: 0 }, id, 6)
+                          .map(([x, y, z]) => relative(x, y, z))
+                          .join(" ")}
+                        fill="#00000003"
+                        stroke="#999"
+                        strokeWidth="1"
+                        strokeDasharray="3 4"
+                        pointerEvents="none"
+                      />
+                    )}
+                    <Artwork id={id} />
+                  </g>
+                );
+              })}
+              {drawn.map((id) => {
+                return (
+                  <g className="instrument-terminals" key={id}>
+                    {terminals
+                      .filter((t) => owner(t) === id)
+                      .map((t) => {
+                        const q = terminalPoint(t, positions),
+                          c = project(...q),
+                          cx = c[0],
+                          cy = c[1],
+                          wired = connections.some(
+                            (w) => w.from === t || w.to === t,
+                          );
+                        return (
+                          <g key={t}>
                             <circle
-                              className="terminal-hit"
+                              className={`terminal ${draft === t ? "pending" : ""}`}
+                              data-terminal={t}
                               cx={cx}
                               cy={cy}
-                              r={Math.max(13, 12 / camera.zoom)}
-                              fill="transparent"
-                              role="button"
-                              tabIndex={0}
-                              aria-label={terminalNames[t]}
-                              onPointerDown={(e) => {
-                                e.stopPropagation();
-                                connect(t);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                  e.preventDefault();
+                              r={mode === "wire" ? 6 : 3}
+                              fill={wired ? "#444" : "#fff"}
+                              stroke={mode === "wire" ? "#333" : "#888"}
+                              strokeWidth="1.2"
+                              pointerEvents="none"
+                            />
+                            {id === "junction" && (
+                              <text
+                                x={cx + 9}
+                                y={cy + 4}
+                                fontSize="10"
+                                fill="#666"
+                                pointerEvents="none"
+                              >
+                                {t.endsWith(":p") ? "P" : "N"}
+                              </text>
+                            )}
+                            {mode === "wire" && (
+                              <circle
+                                className="terminal-hit"
+                                cx={cx}
+                                cy={cy}
+                                r={Math.max(13, 12 / camera.zoom)}
+                                fill="transparent"
+                                role="button"
+                                tabIndex={0}
+                                aria-label={terminalNames[t]}
+                                onPointerDown={(e) => {
                                   e.stopPropagation();
                                   connect(t);
-                                }
-                              }}
-                            >
-                              <title>{terminalNames[t]}</title>
-                            </circle>
-                          )}
-                        </g>
-                      );
-                    })}
-                </g>
-              );
-            })}
-          </g>
-        </svg>
-        <div
-          className="lab-toolbar"
-          role="toolbar"
-          aria-label="Laboratory interaction mode"
-        >
-          {(
-            [
-              { id: "move", icon: MousePointer2, label: "Move", key: "V" },
-              { id: "wire", icon: Cable, label: "Wire", key: "W" },
-              { id: "inspect", icon: ScanSearch, label: "Inspect", key: "I" },
-            ] as const
-          ).map((item) => (
-            <button
-              key={item.id}
-              aria-pressed={mode === item.id}
-              onClick={() => setInteractionMode(item.id)}
-              title={`${item.label} · ${item.key}`}
-            >
-              <item.icon size={17} strokeWidth={1.5} />
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </div>
-        <aside className="lab-panel" aria-label="Circuit controls">
-          <div className="lab-panel-heading">
-            <h1>
-              {mode === "inspect" && selected
-                ? instruments[selected].name
-                : "Build a connection."}
-            </h1>
-            <span>{connections.length} / 3</span>
-          </div>
-          {mode === "inspect" && selected ? (
-            <>
-              <p>{instruments[selected].description}</p>
-              {selected === "junction" ? (
-                <div className="junction-detail">
-                  <PresentationContext.Provider value={frozen}>
-                    <Junction
-                      showCarriers
-                      showIons
-                      selected={null}
-                      onSelect={noop}
-                      showCircuit={false}
-                      showGrid={false}
-                      interactive={false}
-                    />
-                  </PresentationContext.Provider>
-                  <span>Semiconductor cross-section · schematic</span>
-                </div>
-              ) : (
-                <div className="lab-reading">
-                  <span>
-                    {selected === "supply" ? "Voltage setpoint" : "Current"}
-                  </span>
-                  <strong>
-                    {selected === "supply" ? `${voltage.toFixed(1)} V` : "— A"}
-                  </strong>
-                </div>
-              )}
-              <div className="lab-property">
-                <span>Terminals</span>
-                <span>
-                  {selected === "supply"
-                    ? "+ / −"
-                    : selected === "junction"
-                      ? "P / N"
-                      : "IN / OUT"}
-                </span>
-              </div>
-            </>
-          ) : (
-            <p>
-              Place the instruments. Connect N to positive and P to negative,
-              with the ammeter in series.
-            </p>
-          )}
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    connect(t);
+                                  }
+                                }}
+                              >
+                                <title>{terminalNames[t]}</title>
+                              </circle>
+                            )}
+                          </g>
+                        );
+                      })}
+                  </g>
+                );
+              })}
+            </g>
+          </svg>
           <div
-            className={`circuit-feedback ${circuit.valid ? "ready" : ""}`}
-            role="status"
+            className="lab-toolbar"
+            role="toolbar"
+            aria-label="Laboratory interaction mode"
           >
-            <span className="circuit-indicator">
-              {circuit.valid ? <Check size={13} /> : <span />}
-            </span>
-            <p>{circuit.message}</p>
+            {(
+              [
+                { id: "move", icon: MousePointer2, label: "Move", key: "V" },
+                { id: "wire", icon: Cable, label: "Wire", key: "W" },
+                { id: "inspect", icon: ScanSearch, label: "Inspect", key: "I" },
+              ] as const
+            ).map((item) => (
+              <button
+                key={item.id}
+                aria-pressed={mode === item.id}
+                onClick={() => setInteractionMode(item.id)}
+                title={`${item.label} · ${item.key}`}
+              >
+                <item.icon size={17} strokeWidth={1.5} />
+                <span>{item.label}</span>
+              </button>
+            ))}
           </div>
-          <div className="lab-voltage">
-            <div>
-              <label htmlFor="lab-voltage">Supply voltage</label>
-              <output htmlFor="lab-voltage">
-                {voltage.toFixed(1)} <span>V</span>
-              </output>
+          <aside className="lab-panel" aria-label="Circuit controls">
+            <div className="lab-panel-heading">
+              <h1>
+                {mode === "inspect" && selected
+                  ? instruments[selected].name
+                  : circuit.valid
+                    ? "Reverse-bias junction."
+                    : "Build a connection."}
+              </h1>
+              <span>{connections.length} / 3</span>
             </div>
-            <input
-              id="lab-voltage"
-              type="range"
-              min="0"
-              max="5"
-              step=".1"
-              disabled={!circuit.valid}
-              value={voltage}
-              onInput={(e) => setVoltage(Number(e.currentTarget.value))}
-              onChange={(e) => setVoltage(Number(e.currentTarget.value))}
-            />
-            <div className="range-ends">
-              <span>0 V</span>
-              <span>5 V</span>
+            {mode === "inspect" && selected ? (
+              <>
+                <p>{instruments[selected].description}</p>
+                {selected === "junction" ? (
+                  <div className="junction-detail">
+                    <PresentationContext.Provider value={frozen}>
+                      <Junction
+                        showCarriers
+                        showIons
+                        selected={null}
+                        onSelect={noop}
+                        showCircuit={false}
+                        showGrid={false}
+                        interactive={false}
+                      />
+                    </PresentationContext.Provider>
+                    <span>Semiconductor cross-section · schematic</span>
+                  </div>
+                ) : (
+                  <div className="lab-reading">
+                    <span>
+                      {selected === "supply" ? "Voltage setpoint" : "Current"}
+                    </span>
+                    <strong>
+                      {selected === "supply"
+                        ? `${simulation.solution.reverseVoltageV.toFixed(2)} V`
+                        : formatCurrent(simulation.ammeterCurrentA)}
+                    </strong>
+                  </div>
+                )}
+                <div className="lab-property">
+                  <span>Terminals</span>
+                  <span>
+                    {selected === "supply"
+                      ? "+ / −"
+                      : selected === "junction"
+                        ? "P / N"
+                        : "IN / OUT"}
+                  </span>
+                </div>
+              </>
+            ) : !circuit.valid ? (
+              <p>
+                Place the instruments. Connect N to positive and P to negative,
+                with the ammeter in series.
+              </p>
+            ) : null}
+            <div
+              className={`circuit-feedback ${circuit.valid ? "ready" : ""}`}
+              role="status"
+            >
+              <span className="circuit-indicator">
+                {circuit.valid ? <Check size={13} /> : <span />}
+              </span>
+              <p>{circuit.message}</p>
             </div>
+            <div className="lab-voltage">
+              <div>
+                <label htmlFor="lab-voltage">Supply voltage</label>
+                <output htmlFor="lab-voltage">
+                  {simulation.solution.reverseVoltageV.toFixed(2)}{" "}
+                  <span>V</span>
+                </output>
+              </div>
+              <input
+                id="lab-voltage"
+                type="range"
+                min="0"
+                max="10"
+                step=".1"
+                disabled={!circuit.valid}
+                value={voltage}
+                onInput={(e) => setVoltage(Number(e.currentTarget.value))}
+                onChange={(e) => setVoltage(Number(e.currentTarget.value))}
+              />
+              <div className="range-ends">
+                <span>0 V</span>
+                <span>10 V</span>
+              </div>
+            </div>
+            <div className="lab-voltage-status">
+              <span>Applied bias</span>
+              <span>
+                {simulation.settling
+                  ? `Setting ${voltage.toFixed(1)} V`
+                  : "Settled"}
+              </span>
+            </div>
+            <p className="lab-phase-note">
+              {circuit.valid
+                ? "Ideal pre-breakdown silicon model."
+                : "Complete the reverse-bias circuit to apply voltage."}{" "}
+              At zero bias, net terminal current is zero.
+            </p>
+            <div className="lab-panel-actions">
+              <button aria-pressed={hints} onClick={() => setHints((v) => !v)}>
+                <Lightbulb size={13} /> Hints {hints ? "on" : "off"}
+              </button>
+              <button
+                onClick={() => {
+                  setConnections([]);
+                  setVoltage(0);
+                  setDraft(null);
+                  setPointer(null);
+                  setSelectedWire(null);
+                  setNotice("Circuit reset. Instrument positions preserved.");
+                }}
+              >
+                <RotateCcw size={12} /> Reset circuit
+              </button>
+            </div>
+            <ScientificPanel />
+          </aside>
+          {selectedWire && (
+            <div className="wire-selection">
+              <span>Connection selected</span>
+              <button onClick={deleteWire}>
+                <Trash2 size={13} /> Delete wire
+              </button>
+              <button
+                onClick={() => setSelectedWire(null)}
+                aria-label="Deselect wire"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          )}
+          <div className="lab-camera-controls">
+            <button onClick={() => zoomBy(1 / 1.2)} aria-label="Zoom out">
+              <Minus size={15} />
+            </button>
+            <span>{Math.round(camera.zoom * 100)}%</span>
+            <button onClick={() => zoomBy(1.2)} aria-label="Zoom in">
+              <Plus size={15} />
+            </button>
+            <button onClick={() => fit()} aria-label="Fit workspace">
+              <Maximize size={14} />
+            </button>
           </div>
-          <p className="lab-phase-note">
-            {circuit.valid
-              ? "Voltage setpoint unlocked."
-              : "Complete the reverse-bias circuit to unlock voltage."}{" "}
-            Current and semiconductor dynamics arrive in Phase 3.
-          </p>
-          <div className="lab-panel-actions">
-            <button aria-pressed={hints} onClick={() => setHints((v) => !v)}>
-              <Lightbulb size={13} /> Hints {hints ? "on" : "off"}
-            </button>
-            <button
-              onClick={() => {
-                setConnections([]);
-                setVoltage(0);
-                setDraft(null);
-                setPointer(null);
-                setSelectedWire(null);
-                setNotice("Circuit reset. Instrument positions preserved.");
-              }}
-            >
-              <RotateCcw size={12} /> Reset circuit
-            </button>
+          <div className="lab-help" aria-live="polite">
+            {notice ||
+              (ghost?.blocked
+                ? "Occupied space — release to settle on the nearest free grid point."
+                : draft
+                  ? `From ${terminalNames[draft]}. Choose another terminal. Escape cancels.`
+                  : mode === "move"
+                    ? "Drag an instrument to move · drag the grid to pan · scroll to zoom"
+                    : mode === "wire"
+                      ? "Connect terminals · select a wire to remove it · Escape cancels"
+                      : "Select an instrument to look closer · drag the grid to pan")}
           </div>
-        </aside>
-        {selectedWire && (
-          <div className="wire-selection">
-            <span>Connection selected</span>
-            <button onClick={deleteWire}>
-              <Trash2 size={13} /> Delete wire
-            </button>
-            <button
-              onClick={() => setSelectedWire(null)}
-              aria-label="Deselect wire"
-            >
-              <X size={13} />
-            </button>
-          </div>
-        )}
-        <div className="lab-camera-controls">
-          <button onClick={() => zoomBy(1 / 1.2)} aria-label="Zoom out">
-            <Minus size={15} />
-          </button>
-          <span>{Math.round(camera.zoom * 100)}%</span>
-          <button onClick={() => zoomBy(1.2)} aria-label="Zoom in">
-            <Plus size={15} />
-          </button>
-          <button onClick={() => fit()} aria-label="Fit workspace">
-            <Maximize size={14} />
-          </button>
         </div>
-        <div className="lab-help" aria-live="polite">
-          {notice ||
-            (ghost?.blocked
-              ? "Occupied space — release to settle on the nearest free grid point."
-              : draft
-                ? `From ${terminalNames[draft]}. Choose another terminal. Escape cancels.`
-                : mode === "move"
-                  ? "Drag an instrument to move · drag the grid to pan · scroll to zoom"
-                  : mode === "wire"
-                    ? "Connect terminals · select a wire to remove it · Escape cancels"
-                    : "Select an instrument to look closer · drag the grid to pan")}
-        </div>
-      </div>
-    </section>
+      </section>
+    </SimulationContext.Provider>
   );
 }

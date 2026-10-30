@@ -1,4 +1,10 @@
 import { createContext, useContext } from "react";
+import {
+  solveJunction,
+  widthToIllustration,
+  EQUILIBRIUM,
+  BUILT_IN_VOLTAGE_V,
+} from "../physics/model";
 export type BiasMode = "reverse" | "forward";
 export interface PresentationState {
   stage: number;
@@ -9,6 +15,7 @@ export interface PresentationState {
   playing: boolean;
   reducedMotion: boolean;
   width: number;
+  pFraction?: number;
 }
 export const PresentationContext = createContext<PresentationState>({
   stage: 0,
@@ -21,8 +28,7 @@ export const PresentationContext = createContext<PresentationState>({
   width: 30,
 });
 export const usePresentation = () => useContext(PresentationContext);
-// Normalized, qualitative depletion approximation. A quantitative simulator can
-// replace this selector without changing the presentation or illustration API.
+// Introductory formation is narrative; biased stages share the same SI model.
 export function depletionWidth(
   stage: number,
   progress: number,
@@ -30,10 +36,16 @@ export function depletionWidth(
   bias: BiasMode,
 ) {
   if (stage === 0) return 30;
-  if (stage === 1) return 30 + 68 * Math.min(1, progress / 0.7);
-  if (stage === 2)
-    return bias === "reverse" ? 98 + 46 * progress : 98 - 55 * progress;
-  return 98 * Math.sqrt(1 + voltage / 0.7);
+  const equilibrium = widthToIllustration(EQUILIBRIUM.widthM);
+  if (stage === 1) return 30 + (equilibrium - 30) * Math.min(1, progress / 0.7);
+  if (stage === 2 && bias === "forward")
+    return (
+      equilibrium *
+      Math.sqrt(
+        Math.max(0.05, BUILT_IN_VOLTAGE_V - voltage) / BUILT_IN_VOLTAGE_V,
+      )
+    );
+  return widthToIllustration(solveJunction(voltage).widthM);
 }
 export const chapters = [
   {

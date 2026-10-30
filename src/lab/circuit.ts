@@ -92,7 +92,7 @@ export function validateCircuit(wires: Connection[]): CircuitResult {
           valid: false,
           code: "polarity",
           message:
-            "The junction is forward biased. Connect N toward supply + and P toward supply −.",
+            "The junction would be forward biased. Connect N toward supply + and P toward supply −.",
         };
       if (wires.length === 3)
         return {
@@ -126,3 +126,27 @@ export const suggestedConnections: Pick<Connection, "from" | "to">[] = [
   { from: "ammeter:out", to: "junction:n" },
   { from: "junction:p", to: "supply:negative" },
 ];
+
+/** Conventional current follows supply + to − through the valid series loop. */
+export function traceCurrent(connections: Connection[]): {
+  directions: Record<string, 1 | -1>;
+  meterSign: 1 | -1;
+} {
+  const directions: Record<string, 1 | -1> = {};
+  let meterSign: 1 | -1 = 1;
+  let cursor: TerminalId = "supply:positive";
+  const seen = new Set<TerminalId>();
+  while (!seen.has(cursor)) {
+    seen.add(cursor);
+    const w = connections.find((w) => w.from === cursor || w.to === cursor);
+    if (!w) break;
+    directions[w.id] = w.from === cursor ? 1 : -1;
+    const next: TerminalId = w.from === cursor ? w.to : w.from;
+    if (next === "supply:negative") break;
+    if (owner(next) === "ammeter") meterSign = next === "ammeter:in" ? 1 : -1;
+    const exit: TerminalId | undefined = internal[next];
+    if (!exit) break;
+    cursor = exit;
+  }
+  return { directions, meterSign };
+}
