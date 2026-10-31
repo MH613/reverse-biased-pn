@@ -1,4 +1,4 @@
-# Phase 3 silicon junction model
+# Silicon junction model
 
 The laboratory solves a **uniformly doped, abrupt, one-dimensional silicon PN junction** under the depletion approximation. It is a quasistatic, long-base, ideal diffusion-current model at fixed temperature, with fully ionized dopants and nondegenerate Boltzmann statistics. It does not simulate breakdown, tunnelling, generation/recombination leakage in the space-charge region, surface leakage, self-heating, series resistance, capacitive displacement current, or a transient drift–diffusion PDE.
 
@@ -81,6 +81,7 @@ Values below were independently calculated from the equations, then pinned in au
 | VR (V) | W (µm)      | xp (µm)     | xn (µm)     | Emax (kV/cm)  | I(P→N) (fA)  |
 | ------ | ----------- | ----------- | ----------- | ------------- | ------------ |
 | 0      | 0.376875913 | 0.251250608 | 0.125625304 | 38.858221927  | 0            |
+| 2      | 0.728000809 | 0.485333873 | 0.242666936 | 75.061355905  | −1.225365613 |
 | 5      | 1.054471321 | 0.702980880 | 0.351490440 | 108.722471269 | −1.225365613 |
 | 10     | 1.442838895 | 0.961892597 | 0.480946298 | 148.765554166 | −1.225365613 |
 

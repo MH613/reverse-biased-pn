@@ -8,7 +8,7 @@ test("close-up overview flows into four working presentation stages", async ({
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
-  await expect(page.locator("h1")).toContainText("A small junction.");
+  await expect(page.locator("h1")).toContainText("The PN junction.");
   await expect(
     page.locator(".topic-tags,.phase-tag,.observations,.legend-panel"),
   ).toHaveCount(0);
@@ -33,6 +33,9 @@ test("close-up overview flows into four working presentation stages", async ({
   await expect(page.locator(".inspection")).toContainText(
     "mobile positive charges",
   );
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".inspection")).toHaveCount(0);
+  await page.getByRole("button", { name: "Inspect P-type holes" }).click();
   await page.getByRole("button", { name: "Close material detail" }).click();
   await page.getByRole("button", { name: "Pause animation" }).click();
   const carriers = () =>
@@ -160,7 +163,7 @@ test("close-up overview flows into four working presentation stages", async ({
     .toBe(true);
   await page.getByRole("button", { name: "Exit full screen" }).click();
   await page.getByRole("button", { name: "Back to overview" }).click();
-  await expect(page.locator("h1")).toContainText("A small junction.");
+  await expect(page.locator("h1")).toContainText("The PN junction.");
   expect(await scene!.evaluate((el) => el.isConnected)).toBe(true);
   expect(errors).toEqual([]);
 });

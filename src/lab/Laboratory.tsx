@@ -225,7 +225,7 @@ export function Laboratory({
   useEffect(() => {
     if (!circuit.valid) setVoltage(0);
   }, [circuit.valid]);
-  const fit = useCallback((immediate = false) => {
+  const fit = useCallback((immediate = false, includeRoutes = true) => {
     const b = bounds.current,
       p = positionsRef.current;
     const corners = ids.flatMap((id) =>
@@ -234,12 +234,14 @@ export function Laboratory({
         project(v[0], v[1], 60),
       ]),
     );
-    svg.current
-      ?.querySelectorAll<SVGPathElement>(".wire-visible,.connection-hint")
-      .forEach((path) => {
-        const r = path.getBBox();
-        corners.push([r.x, r.y], [r.x + r.width, r.y + r.height]);
-      });
+    if (includeRoutes) {
+      svg.current
+        ?.querySelectorAll<SVGPathElement>(".wire-visible,.connection-hint")
+        .forEach((path) => {
+          const r = path.getBBox();
+          corners.push([r.x, r.y], [r.x + r.width, r.y + r.height]);
+        });
+    }
     const xs = corners.map((v) => v[0]),
       ys = corners.map((v) => v[1]),
       minX = Math.min(...xs),
@@ -426,6 +428,7 @@ export function Laboratory({
       const id = gesture.current.id;
       final[id] = nearestPlacement(id, final[id], final);
     }
+    if (resetting) final = structuredClone(initialPositions);
     onSessionChange({ positions: final, connections, voltage });
     if (resetTimer.current) clearTimeout(resetTimer.current);
     gesture.current = null;
@@ -736,6 +739,25 @@ export function Laboratory({
         role="dialog"
         aria-modal="true"
         aria-label="Circuit laboratory"
+        onKeyDown={(e) => {
+          if (e.key !== "Tab") return;
+          const controls = [
+            ...e.currentTarget.querySelectorAll<HTMLElement>(
+              'a[href],button:not(:disabled),input:not(:disabled),summary,[tabindex="0"]',
+            ),
+          ].filter(
+            (el) => el.getClientRects().length && !el.closest('[aria-hidden="true"]'),
+          );
+          const first = controls[0],
+            last = controls[controls.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last?.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first?.focus();
+          }
+        }}
       >
         <header className="lab-header">
           <a
@@ -1201,17 +1223,26 @@ export function Laboratory({
                 onClick={() => {
                   abortGesture();
                   setResetting(true);
+                  settlers.current.clear();
+                  cancelAnimationFrame(settleFrame.current);
+                  settleFrame.current = 0;
                   if (resetTimer.current) clearTimeout(resetTimer.current);
-                  resetTimer.current = setTimeout(
-                    () => setResetting(false),
-                    250,
-                  );
+                  const restore = () => {
+                    const original = structuredClone(initialPositions);
+                    positionsRef.current = original;
+                    setPositions(original);
+                    setResetting(false);
+                    fit(!!reducedRef.current, false);
+                  };
+                  if (reducedMotion) restore();
+                  else resetTimer.current = setTimeout(restore, 120);
                   setConnections([]);
                   setVoltage(0);
                   setDraft(null);
                   setPointer(null);
                   setSelectedWire(null);
-                  setNotice("Circuit reset. Instrument positions preserved.");
+                  setSelected(null);
+                  setNotice("Circuit reset. Original layout restored.");
                 }}
               >
                 <RotateCcw className="reset-icon" size={12} /> Reset circuit

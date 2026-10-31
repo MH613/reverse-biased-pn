@@ -1,6 +1,6 @@
 # Phase 4 motion and interaction audit
 
-The visual identity and Phase 3 SI physics model are preserved. This phase changes interaction mechanics, routing and rendering work. It does not add a new physics model or implement Phase 5.
+The visual identity and Phase 3 SI physics model are preserved. This phase changes interaction mechanics, routing and rendering work. It does not add a new physics model. The final integration review is documented in [qa.md](qa.md).
 
 ## Wire routing
 

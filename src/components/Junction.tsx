@@ -472,6 +472,7 @@ export function Junction({
       </g>
       <g
         opacity={connected ? connection : 0}
+        aria-hidden={!connected || !showCircuit}
         style={{ display: showCircuit ? undefined : "none" }}
         className="layer-fade"
         strokeLinejoin="round"

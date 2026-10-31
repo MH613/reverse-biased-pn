@@ -24,7 +24,7 @@
   left: 50%;
   transform: translateX(-50%);
   font-size: 12px;
-  color: #888;
+  color: #666;
   letter-spacing: -0.2px;
 }
 .lab-return {
@@ -129,7 +129,7 @@
   width: 58px;
   height: 57px;
   border-radius: 4px;
-  color: #999;
+  color: #666;
 }
 .lab-toolbar button > span {
   font-size: 9px;
@@ -174,14 +174,14 @@
 }
 .lab-panel-heading > span {
   font-size: 9px;
-  color: #aaa;
+  color: #737373;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 .lab-panel > p {
   font-size: 11px;
   line-height: 1.8;
-  color: #888;
+  color: #666;
   margin: 0 0 17px;
 }
 .circuit-feedback {
@@ -195,7 +195,7 @@
 .circuit-feedback p {
   font-size: 10px;
   line-height: 1.75;
-  color: #777;
+  color: #737373;
   margin: 0;
 }
 .circuit-indicator {
@@ -233,7 +233,7 @@
 }
 .lab-voltage label {
   font-size: 10px;
-  color: #777;
+  color: #737373;
 }
 .lab-voltage output {
   font-size: 20px;
@@ -242,7 +242,7 @@
 }
 .lab-voltage output span {
   font-size: 10px;
-  color: #999;
+  color: #666;
   margin-left: 3px;
 }
 .lab-voltage input {
@@ -256,7 +256,7 @@
   font-size: 9px;
   line-height: 1.7;
   margin: 17px 0;
-  color: #aaa;
+  color: #737373;
 }
 .lab-panel-actions {
   display: flex;
@@ -270,7 +270,7 @@
   align-items: center;
   gap: 6px;
   font-size: 9px;
-  color: #888;
+  color: #666;
   padding: 0;
 }
 .lab-panel-actions button:hover {
@@ -290,7 +290,7 @@
 }
 .lab-camera-controls button {
   padding: 7px;
-  color: #777;
+  color: #737373;
   border-radius: 3px;
 }
 .lab-camera-controls button:hover {
@@ -301,14 +301,14 @@
   width: 39px;
   text-align: center;
   font-variant-numeric: tabular-nums;
-  color: #888;
+  color: #666;
 }
 .lab-help {
   position: absolute;
   bottom: 31px;
   left: 27px;
   font-size: 10px;
-  color: #999;
+  color: #666;
   max-width: calc(100% - 300px);
   pointer-events: none;
   background: #ffffffbb;
@@ -331,7 +331,7 @@
   white-space: nowrap;
 }
 .wire-selection > span {
-  color: #999;
+  color: #666;
 }
 .wire-selection button {
   display: flex;
@@ -346,7 +346,7 @@
   justify-content: space-between;
   margin: 20px 0 15px;
   font-size: 10px;
-  color: #888;
+  color: #666;
 }
 .lab-reading strong {
   font-size: 22px;
@@ -358,7 +358,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 9px;
-  color: #999;
+  color: #666;
   padding: 12px 0 0;
 }
 .lab-property > span:last-child {
@@ -378,7 +378,7 @@
 .junction-detail > span {
   display: block;
   font-size: 8px;
-  color: #aaa;
+  color: #737373;
   text-align: center;
   margin-top: -15px;
 }
@@ -617,7 +617,6 @@
 .is-resetting .reset-icon {
   animation: reset-turn 250ms ease-out;
 }
-.is-resetting .lab-instrument,
 .is-resetting .science-panel {
   animation: reset-ack 250ms ease-out;
 }
@@ -677,6 +676,22 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .lab-panel {
+    transition: none;
+  }
+}
+
+/* Reset changes layout only while the workspace geometry is faded out. */
+.lab-camera {
+  transition: opacity 120ms ease;
+}
+.is-resetting .lab-camera {
+  opacity: 0;
+}
+.is-resetting .lab-canvas {
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lab-camera {
     transition: none;
   }
 }

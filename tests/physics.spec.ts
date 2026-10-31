@@ -9,13 +9,17 @@ import {
 } from "../src/physics/model";
 import { traceCurrent } from "../src/lab/circuit";
 
-test("agrees with independently calculated silicon reference points at 0, 5 and 10 V", () => {
+test("agrees with independently calculated silicon reference points at 0, 2, 5 and 10 V", () => {
   expect(BUILT_IN_VOLTAGE_V).toBeCloseTo(0.7322363927517848, 13);
   expect(SATURATION_CURRENT_A / 1e-15).toBeCloseTo(1.225365612614968, 12);
   for (const [v, w, xp, xn, e] of [
     [
       0, 0.3768759127059578, 0.25125060847063857, 0.12562530423531926,
       38.85822192744287,
+    ],
+    [
+      2, 0.7280008094182024, 0.4853338729454683, 0.24266693647273416,
+      75.06135590523067,
     ],
     [
       5, 1.0544713205758476, 0.7029808803838983, 0.3514904401919492,
@@ -120,7 +124,7 @@ test("all quantitative views and instruments agree, interpolate coherently, and 
     .locator(".field-operating-profile")
     .elementHandle();
   const curve = await page.locator(".width-curve").getAttribute("d");
-  for (const v of [0, 5, 10]) {
+  for (const v of [0, 2, 5, 10]) {
     await slider.fill(String(v));
     await expect(panel).toHaveAttribute("data-applied-voltage", String(v));
     const s = solveJunction(v);

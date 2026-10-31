@@ -52,9 +52,13 @@ function App() {
     () => matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
   const [direction, setDirection] = useState(1);
-  const [compact, setCompact] = useState(innerWidth < 760);
+  const [viewport, setViewport] = useState({
+    width: innerWidth,
+    height: innerHeight,
+  });
+  const compact = viewport.width < 760;
   useEffect(() => {
-    const resize = () => setCompact(innerWidth < 760);
+    const resize = () => setViewport({ width: innerWidth, height: innerHeight });
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
   }, []);
@@ -104,6 +108,7 @@ function App() {
         )
       )
         return;
+      if (e.key === "Escape") setSelected(null);
       if (e.key === "ArrowRight" || e.key === "PageDown") {
         e.preventDefault();
         goRef.current(viewRef.current + 1);
@@ -201,23 +206,27 @@ function App() {
     reset();
     setPlaying(true);
   };
+  // Keep a clear vertical band between the overview copy and discovery controls.
+  // Short screens retain the scrollable layout's minimum usable height.
+  const homeSceneWidth = Math.min(viewport.width * (compact ? 1.12 : 0.75), 1280);
+  const homeFigureHeight =
+    Math.max(viewport.height, compact ? 820 : 640) - (compact ? 410 : 390);
+  const homeScale = 0.96 * Math.min(1, homeFigureHeight / (homeSceneWidth * 0.42));
   const camera = {
     x: home || compact ? "0vw" : "18vw",
     y: home
-      ? compact
-        ? "17vh"
-        : "18vh"
+      ? "3vh"
       : compact
         ? "5vh"
         : `${stage >= 2 ? -5 : [-1, -2][stage]}vh`,
     scale: home
-      ? 1.42
+      ? homeScale
       : compact
         ? stage >= 2
           ? 0.98
           : 1.12
         : [1.02, 1.07, 0.96, 1][stage],
-    rotate: home ? -4 : [-1, 1.5, -1.5, 0][stage],
+    rotate: home ? 0 : [-1, 1.5, -1.5, 0][stage],
   };
   return (
     <MotionConfig reducedMotion="user">
@@ -256,10 +265,18 @@ function App() {
               junction.
             </a>
             <nav className="header-nav" aria-label="Main navigation">
-              <button className={home ? "active" : ""} onClick={() => go(-1)}>
+              <button
+                className={home ? "active" : ""}
+                aria-current={home ? "page" : undefined}
+                onClick={() => go(-1)}
+              >
                 Overview
               </button>
-              <button className={!home ? "active" : ""} onClick={() => go(0)}>
+              <button
+                className={!home ? "active" : ""}
+                aria-current={!home ? "page" : undefined}
+                onClick={() => go(0)}
+              >
                 The explanation <ArrowUpRight size={12} />
               </button>
             </nav>
@@ -267,6 +284,11 @@ function App() {
               <FlaskConical size={15} /> Laboratory <ArrowUpRight size={13} />
             </button>
           </header>
+          <p className="sr-only" role="status" aria-atomic="true">
+            {home
+              ? "Overview: The PN junction."
+              : `Stage ${stage + 1} of 4: ${chapters[stage].label}`}
+          </p>
           <main
             className="presentation"
             onTouchStart={(e) => {
@@ -331,7 +353,7 @@ function App() {
               >
                 <h1 id="page-title">
                   {home ? (
-                    <>A small junction.</>
+                    <>The PN junction.</>
                   ) : (
                     chapters[stage].title.split("\n").map((line, i) => (
                       <React.Fragment key={line}>
