@@ -13,6 +13,10 @@ The application remains a frontend-only React/TypeScript exhibit with locally bu
 
 Exposed wire leads now render above equipment faces, while floor runs retain their original depth behind equipment. Previously, the coordinates matched but opaque instrument artwork could conceal the final connection segment. Draft wires, connection hints and completed wires share the same terminal-to-floor geometry. The ammeter's physical and interactive ports are swapped together: **OUT is left, IN is right**. Electrical identities and current-sign conventions are preserved. A regression checks the draw order and physical endpoint alignment before and after zooming/dragging, draft attachment, displayed labels and the positive 5 V ammeter reading. Routing checks still cover separated paths in multiple equipment arrangements.
 
+## Maximum-zoom stroke follow-up
+
+Motion's normalized line-drawing dashes could repeat on non-scaling wire strokes at high camera zoom, leaving a small visible gap near ammeter IN. Completed wires, casings and terminal leads now use a solid stroke; their creation animation accounts for camera zoom. Hints retain their intentional dashed appearance. A high-resolution Chromium close-up confirms continuity at the maximum 2.4× camera zoom. The production build and all 11 targeted laboratory, motion and routing tests passed, including new connections created at maximum zoom. Physics and circuit semantics are unchanged.
+
 ## Architecture and physics review
 
 SVG models use one axonometric projection, keeping source, ammeter, junction, ports, grid and axis-aligned wires consistent. Circuit topology is separate from equipment geometry: moving a device never rewires it. Obstacle-aware routes reserve space for other terminals and wires, reuse clear paths, and interpolate interior control points with terminal anchors updated directly. Collision-aware pointer motion tracks the cursor in world coordinates; grid settling and camera easing are separate from direct dragging.
@@ -34,7 +38,7 @@ The tiny current is the ideal long-base diffusion contribution, with exact zero-
 
 Final results: **production build passed; all 21 automated tests passed in approximately one minute; production-preview smoke passed with no JavaScript errors or failed resources.** `git diff --check` passed.
 
-`npm run build` checks strict TypeScript and produces the production bundle. `npm test` runs 21 Playwright tests, including pure numerical/topology/routing checks and Chromium interactions:
+`npm run build` checks strict TypeScript and produces the production bundle. `npm test` runs 22 Playwright tests, including pure numerical/topology/routing checks and Chromium interactions:
 
 - All four stages, pause/resume, replay, skip, reverse/forward contrast, stage-four voltage, persistent SVG camera, arrow/wheel navigation, fullscreen entry/exit, lab entry/return and restored focus.
 - Actual terminal wiring via pointer and keyboard; forward-polarity rejection; open, short, branch and ammeter-bypass detection; both valid series-meter positions; disconnection and voltage locking; retained layout and live circuit on return.

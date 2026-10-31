@@ -695,3 +695,10 @@
     transition: none;
   }
 }
+
+/* Motion's normalized drawing dashes must not survive on non-scaling strokes:
+   at high zoom they otherwise repeat and leave gaps near terminal leads. */
+.drawn-wire[data-drawn="true"] {
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+}

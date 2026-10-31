@@ -286,3 +286,29 @@ test("raised wire leads remain visibly above equipment and meet every physical p
   await expect(page.locator(".lab-wire")).toHaveCount(3);
   await expect(page.locator('.science-panel')).toHaveAttribute('data-applied-voltage', '5');
 });
+
+test("completed wire strokes stay continuous at maximum zoom, including newly drawn leads", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await openLab(page);
+  await page.getByRole("button", { name: "Wire", exact: true }).click();
+  await connect(page, "Supply +", "Ammeter IN");
+  const port = await page.locator('[data-terminal="ammeter:in"]').evaluate((el) => {
+    const p = new DOMPoint(Number(el.getAttribute('cx')), Number(el.getAttribute('cy')))
+      .matrixTransform((el as SVGGraphicsElement).getScreenCTM()!);
+    return { x: p.x, y: p.y };
+  });
+  await page.mouse.move(port.x, port.y);
+  await page.mouse.wheel(0, -2200);
+  await expect(page.locator('.lab-camera')).toHaveAttribute('transform', /scale\(2\.4\)/);
+  const strokes = page.locator('.wire-visible,.wire-casing,.terminal-lead');
+  await expect.poll(() => strokes.evaluateAll(els => els.every(el => getComputedStyle(el).strokeDasharray === 'none'))).toBe(true);
+  // Create a second wire at maximum zoom, using keyboard-accessible terminals.
+  for (const name of ['Ammeter OUT', 'Junction N']) {
+    await page.getByRole('button', { name, exact: true }).focus();
+    await page.keyboard.press('Enter');
+  }
+  await expect(page.locator('.terminal-lead')).toHaveCount(4);
+  await expect.poll(() => strokes.evaluateAll(els => els.every(el => getComputedStyle(el).strokeDasharray === 'none'))).toBe(true);
+  const hint = page.locator('.terminal-lead-hint').first();
+  expect(await hint.evaluate(el => getComputedStyle(el).strokeDasharray)).not.toBe('none');
+});

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Junction } from "../components/Junction";
 import { VoltageSource } from "../components/VoltageSource";
+import { DrawnWirePath } from "../components/DrawnWirePath";
 import { project, points, wirePath } from "../components/isometric";
 import {
   PresentationContext,
@@ -846,27 +847,23 @@ export function Laboratory({
                   }
                   data-wire-id={wire.id}
                 >
-                  <motion.path
+                  <DrawnWirePath
+                    zoom={camera.zoom}
                     className="wire-casing"
                     d={wirePaths[wire.id]}
                     fill="none"
                     stroke="#fff"
                     strokeWidth={Math.min(3.8, 2 + camera.zoom * 0.8)}
                     vectorEffect="non-scaling-stroke"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: motionTiming.view }}
                   />
-                  <motion.path
+                  <DrawnWirePath
+                    zoom={camera.zoom}
                     className="wire-visible"
                     d={wirePaths[wire.id]}
                     fill="none"
                     stroke={selectedWire === wire.id ? "#111" : "#666"}
                     strokeWidth={selectedWire === wire.id ? 1.7 : 1.2}
                     vectorEffect="non-scaling-stroke"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: motionTiming.view }}
                   />
                   {simulation.loopCurrentA > 0 && isPresent && (
                     <path
@@ -982,8 +979,10 @@ export function Laboratory({
                   const hint = wire.id.startsWith("hint-"),
                     selected = selectedWire === wire.id;
                   return [wire.from, wire.to].map((terminal) => (
-                    <motion.path
+                    <DrawnWirePath
                       key={`${wire.id}:${terminal}`}
+                      zoom={camera.zoom}
+                      draw={!hint}
                       className={hint ? "terminal-lead-hint" : "terminal-lead"}
                       data-lead-terminal={terminal}
                       data-lead-wire={wire.id}
@@ -992,9 +991,6 @@ export function Laboratory({
                       strokeWidth={hint ? 1 : selected ? 1.7 : 1.2}
                       strokeDasharray={hint ? "4 6" : undefined}
                       vectorEffect="non-scaling-stroke"
-                      initial={hint ? false : { pathLength: 0 }}
-                      animate={hint ? undefined : { pathLength: 1 }}
-                      transition={{ duration: reducedMotion ? 0 : motionTiming.view }}
                     />
                   ));
                 })}
