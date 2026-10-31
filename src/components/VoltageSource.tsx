@@ -103,6 +103,7 @@ export function VoltageSource({
         <path d="M133,23 l4,-6" />
         <circle
           className="source-port-p"
+          data-instrument-port={kind === "ammeter" ? "ammeter:out" : "supply:negative"}
           cx="27"
           cy="46"
           r="3.2"
@@ -110,6 +111,7 @@ export function VoltageSource({
         />
         <circle
           className="source-port-n"
+          data-instrument-port={kind === "ammeter" ? "ammeter:in" : "supply:positive"}
           cx="147"
           cy="46"
           r="3.2"
@@ -122,7 +124,7 @@ export function VoltageSource({
           stroke="none"
           fill="#555555"
         >
-          {kind === "ammeter" ? "IN" : forward ? "+" : "−"}
+          {kind === "ammeter" ? "OUT" : forward ? "+" : "−"}
         </text>
         <text
           x="157"
@@ -131,7 +133,7 @@ export function VoltageSource({
           stroke="none"
           fill="#555555"
         >
-          {kind === "ammeter" ? "OUT" : forward ? "−" : "+"}
+          {kind === "ammeter" ? "IN" : forward ? "−" : "+"}
         </text>
       </g>
     </g>

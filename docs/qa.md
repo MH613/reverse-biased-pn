@@ -9,6 +9,10 @@ The application remains a frontend-only React/TypeScript exhibit with locally bu
 - The modal laboratory contains keyboard focus and restores focus to its entry button on exit. Its model/units disclosure remains in the tab sequence. Active presentation navigation is identified semantically and stage changes have a short screen-reader announcement. Secondary controls, graph axes and metadata use darker gray text for readability.
 - Independent 2 V numerical fixtures and operating-point checks join the existing 0, 5 and 10 V cases. Integration regressions cover overview separation, lab access from all four stages, stage/bias restoration, retained connected bias, keyboard focus wrapping, rapid voltage requests, and full reset persistence.
 
+## Terminal attachment follow-up
+
+Exposed wire leads now render above equipment faces, while floor runs retain their original depth behind equipment. Previously, the coordinates matched but opaque instrument artwork could conceal the final connection segment. Draft wires, connection hints and completed wires share the same terminal-to-floor geometry. The ammeter's physical and interactive ports are swapped together: **OUT is left, IN is right**. Electrical identities and current-sign conventions are preserved. A regression checks the draw order and physical endpoint alignment before and after zooming/dragging, draft attachment, displayed labels and the positive 5 V ammeter reading. Routing checks still cover separated paths in multiple equipment arrangements.
+
 ## Architecture and physics review
 
 SVG models use one axonometric projection, keeping source, ammeter, junction, ports, grid and axis-aligned wires consistent. Circuit topology is separate from equipment geometry: moving a device never rewires it. Obstacle-aware routes reserve space for other terminals and wires, reuse clear paths, and interpolate interior control points with terminal anchors updated directly. Collision-aware pointer motion tracks the cursor in world coordinates; grid settling and camera easing are separate from direct dragging.
@@ -28,9 +32,9 @@ The tiny current is the ideal long-base diffusion contribution, with exact zero-
 
 ## Verification
 
-Final results: **production build passed; all 20 automated tests passed in approximately one minute; production-preview smoke passed with no JavaScript errors or failed resources.** `git diff --check` passed.
+Final results: **production build passed; all 21 automated tests passed in approximately one minute; production-preview smoke passed with no JavaScript errors or failed resources.** `git diff --check` passed.
 
-`npm run build` checks strict TypeScript and produces the production bundle. `npm test` runs 20 Playwright tests, including pure numerical/topology/routing checks and Chromium interactions:
+`npm run build` checks strict TypeScript and produces the production bundle. `npm test` runs 21 Playwright tests, including pure numerical/topology/routing checks and Chromium interactions:
 
 - All four stages, pause/resume, replay, skip, reverse/forward contrast, stage-four voltage, persistent SVG camera, arrow/wheel navigation, fullscreen entry/exit, lab entry/return and restored focus.
 - Actual terminal wiring via pointer and keyboard; forward-polarity rejection; open, short, branch and ammeter-bypass detection; both valid series-meter positions; disconnection and voltage locking; retained layout and live circuit on return.

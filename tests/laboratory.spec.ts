@@ -224,3 +224,65 @@ test("mobile lab stays within viewport and supports keyboard terminal wiring", a
     page.getByRole("slider", { name: "Supply voltage" }),
   ).toBeEnabled();
 });
+
+test("raised wire leads remain visibly above equipment and meet every physical port after the ammeter swap", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await openLab(page);
+  await page.getByRole("button", { name: "Wire", exact: true }).click();
+  await page.getByRole("button", { name: "Supply +", exact: true }).click();
+  await page.mouse.move(500, 650);
+  await expect(page.locator(".pending-wire")).toBeVisible();
+  const draftAttached = await page.locator(".pending-wire").evaluate((el) => {
+    const lead = el as SVGPathElement,
+      port = document.querySelector<SVGCircleElement>('.lab-artwork [data-instrument-port="supply:positive"]')!,
+      first = lead.getPointAtLength(0),
+      a = new DOMPoint(first.x, first.y).matrixTransform(lead.getScreenCTM()!),
+      b = new DOMPoint(Number(port.getAttribute("cx")), Number(port.getAttribute("cy"))).matrixTransform(port.getScreenCTM()!),
+      body = [...document.querySelectorAll(".lab-instrument")].at(-1)!;
+    return Math.hypot(a.x - b.x, a.y - b.y) < 0.1 &&
+      !!(body.compareDocumentPosition(lead) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  expect(draftAttached).toBe(true);
+  await page.keyboard.press("Escape");
+  await connect(page, "Supply +", "Ammeter IN");
+  await connect(page, "Ammeter OUT", "Junction N");
+  await connect(page, "Junction P", "Supply −");
+  await page.getByRole("slider", { name: "Supply voltage" }).fill("5");
+  await expect(page.locator('[data-instrument="ammeter"] .source-readout')).toHaveText("1.225 fA");
+  await expect(page.locator(".terminal-lead")).toHaveCount(6);
+  await expect(page.locator('[data-instrument="ammeter"] text').filter({ hasText: /^OUT$/ })).toHaveAttribute('x', '38');
+  await expect(page.locator('[data-instrument="ammeter"] text').filter({ hasText: /^IN$/ })).toHaveAttribute('x', '157');
+  const check = async () => {
+    const result = await page.evaluate(() => {
+      const screen = (el: SVGGraphicsElement, x: number, y: number) => new DOMPoint(x, y).matrixTransform(el.getScreenCTM()!);
+      const near = (a: DOMPoint, b: DOMPoint) => Math.hypot(a.x - b.x, a.y - b.y) < 0.1;
+      const leads = [...document.querySelectorAll<SVGPathElement>(".terminal-lead")];
+      const aligned = leads.every(lead => {
+        const id = lead.dataset.leadTerminal!,
+          port = document.querySelector<SVGCircleElement>(`.lab-artwork [data-instrument-port="${id}"]`),
+          terminal = document.querySelector<SVGCircleElement>(`[data-terminal="${id}"]`)!,
+          p = lead.getPointAtLength(0),
+          q = screen(lead, p.x, p.y),
+          t = screen(terminal, Number(terminal.getAttribute("cx")), Number(terminal.getAttribute("cy")));
+        return near(q, t) && (!port || near(q, screen(port, Number(port.getAttribute("cx")), Number(port.getAttribute("cy")))));
+      });
+      const lastBody = [...document.querySelectorAll(".lab-instrument")].at(-1)!;
+      const above = leads.every(lead => !!(lastBody.compareDocumentPosition(lead) & Node.DOCUMENT_POSITION_FOLLOWING));
+      const meterIn = document.querySelector('[data-instrument-port="ammeter:in"]')!,
+        meterOut = document.querySelector('[data-instrument-port="ammeter:out"]')!;
+      return { aligned, above, inOnRight: Number(meterIn.getAttribute("cx")) > Number(meterOut.getAttribute("cx")) };
+    });
+    expect(result).toEqual({ aligned: true, above: true, inOnRight: true });
+  };
+  await check();
+  await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+  await page.waitForTimeout(500);
+  await page.getByRole("button", { name: "Move", exact: true }).click();
+  await dragWorld(page, "ammeter", 40, -40);
+  await check();
+  await page.getByRole("button", { name: "Wire", exact: true }).click();
+  await page.getByRole("button", { name: "Supply +", exact: true }).click();
+  // Occupied ports are rejected, and the series circuit remains unchanged.
+  await expect(page.locator(".lab-wire")).toHaveCount(3);
+  await expect(page.locator('.science-panel')).toHaveAttribute('data-applied-voltage', '5');
+});

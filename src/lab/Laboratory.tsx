@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Junction } from "../components/Junction";
 import { VoltageSource } from "../components/VoltageSource";
-import { project, points } from "../components/isometric";
+import { project, points, wirePath } from "../components/isometric";
 import {
   PresentationContext,
   type PresentationState,
@@ -50,6 +50,7 @@ import {
 } from "./geometry";
 import "./laboratory.css";
 import { useWireRoutes } from "./useWireRoutes";
+import { terminalLead } from "./routing";
 import { motionTiming, easeOut } from "../motion";
 import { SimulationContext, useSimulation } from "../physics/SimulationContext";
 import { useJunctionSimulation } from "../physics/useJunctionSimulation";
@@ -719,9 +720,9 @@ export function Laboratory({
   });
   const pendingPath = () => {
     if (!draft || !pointer) return "";
-    const a = terminalPoint(draft, positions),
-      out = positions[owner(draft)].y - 24;
-    return `M${project(...a)} L${project(a[0], out, a[2])} L${project(a[0], out, 0)} L${project(pointer.x, out, 0)} L${project(pointer.x, pointer.y, 0)}`;
+    const lead = terminalLead(draft, positions),
+      out = lead[2][1];
+    return wirePath([...lead, [pointer.x, out, 0], [pointer.x, pointer.y, 0]]);
   };
   return (
     <SimulationContext.Provider value={simulation}>
@@ -900,17 +901,6 @@ export function Laboratory({
                   />
                 </g>
               ))}
-              {draft && pointer && (
-                <path
-                  className="pending-wire"
-                  d={pendingPath()}
-                  fill="none"
-                  stroke="#555"
-                  strokeWidth="1.4"
-                  strokeDasharray="5 4"
-                  pointerEvents="none"
-                />
-              )}
               {ghost && (
                 <g className="placement-ghost" pointerEvents="none">
                   <g
@@ -986,6 +976,40 @@ export function Laboratory({
                   </g>
                 );
               })}
+              {/* Raised leads belong above the instrument faces; floor runs stay below. */}
+              <g className="terminal-leads" fill="none" pointerEvents="none">
+                {routeRequests.map((wire) => {
+                  const hint = wire.id.startsWith("hint-"),
+                    selected = selectedWire === wire.id;
+                  return [wire.from, wire.to].map((terminal) => (
+                    <motion.path
+                      key={`${wire.id}:${terminal}`}
+                      className={hint ? "terminal-lead-hint" : "terminal-lead"}
+                      data-lead-terminal={terminal}
+                      data-lead-wire={wire.id}
+                      d={wirePath(terminalLead(terminal, positions))}
+                      stroke={hint ? "#c6c6c6" : selected ? "#111" : "#666"}
+                      strokeWidth={hint ? 1 : selected ? 1.7 : 1.2}
+                      strokeDasharray={hint ? "4 6" : undefined}
+                      vectorEffect="non-scaling-stroke"
+                      initial={hint ? false : { pathLength: 0 }}
+                      animate={hint ? undefined : { pathLength: 1 }}
+                      transition={{ duration: reducedMotion ? 0 : motionTiming.view }}
+                    />
+                  ));
+                })}
+              </g>
+              {draft && pointer && (
+                <path
+                  className="pending-wire"
+                  d={pendingPath()}
+                  fill="none"
+                  stroke="#555"
+                  strokeWidth="1.4"
+                  strokeDasharray="5 4"
+                  pointerEvents="none"
+                />
+              )}
               {drawn.map((id) => {
                 return (
                   <g className="instrument-terminals" key={id}>

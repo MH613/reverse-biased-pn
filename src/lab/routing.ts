@@ -29,6 +29,12 @@ export const groundPort = (id: TerminalId, p: Positions): XY => [
   terminalPoint(id, p)[0],
   p[owner(id)].y - 20,
 ];
+/** The exposed terminal-to-floor lead, shared by routes and foreground strokes. */
+export function terminalLead(id: TerminalId, positions: Positions): WorldPoint[] {
+  const port = terminalPoint(id, positions),
+    floor = groundPort(id, positions);
+  return [port, [port[0], floor[1], port[2]], [...floor, 0]];
+}
 function blocked(a: XY, b: XY, rects: Rect[]) {
   return rects.some((r) =>
     Math.abs(a[0] - b[0]) < EPS
@@ -360,9 +366,7 @@ export function displayedRoute(
   controls: number[],
   positions: Positions,
 ): { path: string; ground: XY[] } {
-  const a = terminalPoint(route.from, positions),
-    b = terminalPoint(route.to, positions),
-    start = groundPort(route.from, positions),
+  const start = groundPort(route.from, positions),
     end = groundPort(route.to, positions);
   const ground: XY[] = [start];
   for (let i = 1; i <= SLOTS; i++) {
@@ -376,12 +380,9 @@ export function displayedRoute(
     );
   }
   const world: WorldPoint[] = [
-    a,
-    [a[0], start[1], a[2]],
-    [...start, 0],
+    ...terminalLead(route.from, positions),
     ...ground.slice(1).map((p) => [p[0], p[1], 0] as WorldPoint),
-    [b[0], end[1], b[2]],
-    b,
+    ...terminalLead(route.to, positions).slice(0, 2).reverse(),
   ];
   return { path: wirePath(world), ground };
 }

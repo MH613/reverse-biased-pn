@@ -56,8 +56,8 @@ export const localPorts: Record<TerminalId, WorldPoint> = {
   "supply:positive": [507, -260, 10],
   "junction:p": [0, 0, 36],
   "junction:n": [480, 0, 36],
-  "ammeter:in": [387, -260, 10],
-  "ammeter:out": [507, -260, 10],
+  "ammeter:in": [507, -260, 10],
+  "ammeter:out": [387, -260, 10],
 };
 export function terminalPoint(
   terminal: TerminalId,
