@@ -70,3 +70,11 @@ See [the final QA report and known limits](docs/qa.md), and [the Phase 4 motion 
 - `src/style.css`: visual tokens, responsive composition, typography, focus states, and reduced-motion styling.
 
 The equipment and lattice marks are schematic. Quantitative spatial axes, depletion boundaries, numerical measurements and graph profiles follow the documented SI model. Introductory carrier formation in the presentation remains a narrative illustration; it is not a transient device solver.
+
+## GitHub Pages deployment
+
+The repository includes `.github/workflows/deploy.yml`, which builds and deploys on pushes to `main`, or manually from the Actions tab. In GitHub, select **Settings → Pages → Build and deployment → Source → GitHub Actions** once. The intended public URL is https://mh613.github.io/reverse-biased-pn/.
+
+Production builds use `/reverse-biased-pn/` as Vite's base path, including bundled assets and the favicon. Development and its tests remain at `/`. After `npm run build`, `npm run preview` serves the production site at `http://localhost:4173/reverse-biased-pn/`.
+
+If the first workflow runs before Pages is enabled, enable it and then use **Actions → Deploy to GitHub Pages → Run workflow** with branch `main`.
