@@ -86,3 +86,37 @@ Values below were independently calculated from the equations, then pinned in au
 | 10     | 1.442838895 | 0.961892597 | 0.480946298 | 148.765554166 | −1.225365613 |
 
 Vbi = 0.732236392752 V. Tests also sweep 1,000 intermediate voltages for monotonic W/Emax and bounded current, check neutrality, field slopes and integrated potential, compare actual SVG coordinates and instrument text to the model, sample agreement during interpolation, and verify the reset on disconnection.
+
+## Revised presentation models
+
+The presentation is now distinct from the asymmetric laboratory model described above. `src/physics/lesson.ts` uses the supplied PNJunctionInfoPart1.pdf (printed pp. 242–253) and PNJunctionInfoPart2.pdf (pp. 258–264). These source documents are user-provided reference material and are not redistributed in this repository.
+
+All calculations use SI. Silicon is at 300 K with relative permittivity 11.7, complete ionization, and nondegenerate doping. The presentation uses intrinsic density 1.5 × 10^16 m^-3, matching the textbook examples. The abrupt presentation has NA = ND = 10^22 m^-3. The laboratory's original parameter set is unchanged.
+
+For both models, P is on the left, x increases toward N, and the depletion field is negative. E = -dφ/dx; dE/dx = ρ/ε. The displayed peak is a positive magnitude. The potential reference is φ(-W/2) = 0. Outside depletion, charge and field are set to zero and potential is held constant.
+
+### Abrupt model — Part 1, pp. 245–253
+
+Vbi = 2 Vt ln(N/ni), W = sqrt[4 ε (Vbi + VR)/(qN)], and |Emax| = 2(Vbi + VR)/W. Charge is -qN on P and +qN on N. The field is continuous and piecewise linear. The potential is continuous and piecewise quadratic. Forward comparison substitutes VR = -0.40 V; it is limited to depletion electrostatics and does not compute injection/current.
+
+The band diagram follows Fig. 7.7 (p. 251). Ec(x) = Ec(left) - φ(x) in eV; Ev = Ec - Eg, with Eg = 1.12 eV. EFp is referenced to zero and EFn = -VR eV; only neutral-region levels are drawn. Symmetric band-edge offsets establish the equilibrium barrier; this is a simplified energy illustration, not a solution of full transport or spatial quasi-Fermi levels. The voltage range is 0–10 V with a fixed energy axis.
+
+### Symmetric graded model — Part 2, pp. 263–264
+
+The fixed net-doping profile is ND - NA = ax, with a = 10^28 m^-4 (10^20 cm^-4). With x0 = W/2:
+
+- ρ(x) = qax inside depletion.
+- E(x) = qa(x² - x0²)/(2ε).
+- φ(x) = qa[x0²x - x³/3 + 2x0³/3]/(2ε).
+- W = [12 ε (Vbi + VR)/(qa)]^(1/3).
+- |Emax| = qa x0²/(2ε), proportional to (Vbi + VR)^(2/3).
+
+At equilibrium, solve the physical nondegenerate root of Eqs. 7.67 and 7.70 together: 2qax0³/(3ε) = 2Vt ln(ax0/ni). This value of Vbi is fixed during the reverse-voltage sweep, following Eq. 7.71. A small field in graded neutral material is neglected, as stated on printed p. 264. The abrupt and graded examples use different doping distributions, so their absolute widths are not a controlled comparison.
+
+### Breakdown — Part 2, pp. 258–262
+
+Avalanche multiplication and Zener tunneling follow Fig. 7.12. Separate schematic views represent different device conditions: avalanche carrier multiplication and a narrow heavily doped tunneling barrier. Their artwork widths do not represent solutions of the pre-breakdown model. No threshold, breakdown current, or transient solver is invented. Reverse current rises sharply at breakdown; this is distinct from reverse saturation current.
+
+### Verification
+
+`tests/lesson-physics.spec.ts` checks both models against Poisson's equation, integrated voltage drop, charge neutrality, boundary conditions, potential symmetry, expected voltage exponents, and the graded equilibrium relation. Presentation browser tests check intermediate-frame coherence, geometry, bands, sliders, reduced motion, source details, tooltips, and layout. Existing laboratory physics and interaction tests remain in the suite.

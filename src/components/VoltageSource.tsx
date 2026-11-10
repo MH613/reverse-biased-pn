@@ -9,8 +9,8 @@ export function VoltageSource({
   reading,
   kind = "supply",
 }: { reading?: string; kind?: "supply" | "ammeter" } = {}) {
-  const { stage, voltage, bias } = usePresentation();
-  const forward = stage === 2 && bias === "forward";
+  const { stage, voltage, bias, lesson } = usePresentation();
+  const forward = stage === (lesson ? 1 : 2) && bias === "forward";
   const [x, y] = project(360, -260, 56);
   return (
     <g
@@ -97,13 +97,16 @@ export function VoltageSource({
           fill="#555555"
           stroke="none"
         >
-          {reading ?? `${voltage === 0 ? "" : forward ? "+" : "−"}${voltage.toFixed(2)} V`}
+          {reading ??
+            `${voltage === 0 ? "" : forward ? "+" : "−"}${voltage.toFixed(2)} V`}
         </text>
         <circle cx="133" cy="23" r="10" fill="#fafafa" />
         <path d="M133,23 l4,-6" />
         <circle
           className="source-port-p"
-          data-instrument-port={kind === "ammeter" ? "ammeter:out" : "supply:negative"}
+          data-instrument-port={
+            kind === "ammeter" ? "ammeter:out" : "supply:negative"
+          }
           cx="27"
           cy="46"
           r="3.2"
@@ -111,7 +114,9 @@ export function VoltageSource({
         />
         <circle
           className="source-port-n"
-          data-instrument-port={kind === "ammeter" ? "ammeter:in" : "supply:positive"}
+          data-instrument-port={
+            kind === "ammeter" ? "ammeter:in" : "supply:positive"
+          }
           cx="147"
           cy="46"
           r="3.2"

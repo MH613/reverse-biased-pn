@@ -1,6 +1,6 @@
 # Junction
 
-An interactive field guide to PN junctions. The completed five-phase application includes the presentation, interactive isometric circuit laboratory, and a quantitative abrupt-junction depletion model with synchronized scientific visualizations.
+An interactive field guide to PN junctions. The presentation explains reverse bias through synchronized isometric geometry, charge, field, and energy profiles. An interactive circuit laboratory provides a separate quantitative abrupt-junction experiment.
 
 ## Develop
 
@@ -23,13 +23,16 @@ Browser tests use Chromium at `/usr/bin/chromium` and automatically start Vite w
 
 ## Presentation
 
-The overview stacks its title, centered junction illustration, and discovery controls vertically. Start the explanation to smoothly scale and move the same junction into four stages. Navigate with left/right arrows, on-screen controls, or a deliberate wheel gesture on desktop. Horizontal swipes work on mobile; vertical scrolling remains native. Camera movement uses damped springs and keeps one SVG junction mounted when returning to the overview or moving between stages.
+**Effect of Reverse Bias on the Depletion Width and Electric-Field Profile of a PN Junction** follows four stages:
 
-Each stage presents a heading and one short theory paragraph. The design is entirely grayscale, with locally bundled Inter typography. Open circles with plus signs represent holes, filled circles with minus signs represent electrons, and faint signed lattice circles represent fixed ions. Select P/N material for a short, dismissible explanation. Compare forward/reverse bias in stage 3 and adjust reverse voltage in stage 4. The voltage source shares the junction’s isometric axes; its wires follow the ground grid with straight segments. Graphs remain in the laboratory, keeping the presentation uncluttered.
+1. **Equilibrium:** equally doped abrupt junction, fixed ionic charge, and signed electric-field profiles under the depletion approximation.
+2. **Applying bias:** reverse voltage (0–10 V) synchronizes isometric depletion boundaries, space charge, electric field, energy bands, and measurements. A 0.40 V forward-bias comparison shows the opposite trend without modeling injected current.
+3. **Breakdown:** schematic avalanche multiplication and Zener band-to-band tunneling. These mechanism views do not calculate breakdown voltage or current.
+4. **Graded doping:** symmetric linearly graded junction with charge, field, and electrostatic-potential graphs, plus its own reverse-voltage control.
 
-Space pauses and resumes the physics animation. Replay restarts the current stage; skip settles its timeline at the end. The fullscreen control uses the browser's Fullscreen API. The laboratory button opens the circuit-building workspace.
+Graph cards use fixed physical axes and optional equilibrium overlays. Variables in displayed expressions expose definitions on hover, focus, or tap; Model & sources contains assumptions, parameter choices, and textbook page references without derivations. The presentation uses its own equal-doping/graded models; the laboratory retains its asymmetric abrupt junction.
 
-Desktop and projector layouts fit the viewport. Short or narrow displays can scroll to preserve readable content. Reduced-motion preferences remove camera travel and carrier oscillation and shorten text fades.
+Navigate with the arrow keys, on-screen controls, deliberate desktop wheel gestures, or horizontal mobile swipes. Space pauses animation, replay restarts its reveal, and skip completes the reveal. Voltage changes are intentional slider interactions, rather than an automatic voltage sweep. Fullscreen uses the browser API. Mobile and short displays scroll to keep charts readable; desktop/projector layouts fit the viewport. Reduced motion removes camera travel, particle animation, and graph reveals. Laboratory sessions persist when returning to the presentation.
 
 ## Laboratory
 
@@ -53,7 +56,9 @@ See [the final QA report and known limits](docs/qa.md), and [the Phase 4 motion 
 
 ## Architecture and scientific scope
 
-- `src/state/presentation.ts`: shared typed presentation state, stage definitions, and an introductory formation selector that reuses the quantitative model in biased stages.
+- `src/state/presentation.ts`: presentation context and four scientific stage definitions.
+- `src/presentation/LessonPanel.tsx`: synchronized scientific cards, band diagrams, breakdown illustrations, accessible variable definitions, and source information.
+- `src/physics/lesson.ts`: symmetric abrupt and graded presentation electrostatics in SI units, including the graded equilibrium solve.
 - `src/components/Junction.tsx`: reusable axonometric SVG geometry, lattice, contacts, moving carriers, exposed ions, field arrows, wires, and DC source.
 - `src/components/isometric.ts`: shared world projection for the junction, grid, instrument, and straight wire routes.
 - `src/components/VoltageSource.tsx`: DC source drawn on the same isometric axes as the junction.
@@ -69,7 +74,7 @@ See [the final QA report and known limits](docs/qa.md), and [the Phase 4 motion 
 - `src/physics/ScientificPanel.tsx`: stable SVG field/width graphs and a physical cross-section.
 - `src/style.css`: visual tokens, responsive composition, typography, focus states, and reduced-motion styling.
 
-The equipment and lattice marks are schematic. Quantitative spatial axes, depletion boundaries, numerical measurements and graph profiles follow the documented SI model. Introductory carrier formation in the presentation remains a narrative illustration; it is not a transient device solver.
+The equipment and lattice marks are schematic. Quantitative spatial axes, depletion boundaries, numerical measurements and graph profiles follow the documented SI model. Carrier motion and breakdown illustrations are schematic; they are not transient transport or breakdown solvers.
 
 ## GitHub Pages deployment
 

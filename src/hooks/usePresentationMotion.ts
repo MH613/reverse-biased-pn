@@ -20,7 +20,7 @@ export function usePresentationMotion(
       progress: 0,
       width: 30,
       voltage: 0,
-      pFraction: 2 / 3,
+      pFraction: 0.5,
     });
   useEffect(() => {
     if (!enabled || !playing) return;
@@ -41,11 +41,12 @@ export function usePresentationMotion(
       }
       const progress = elapsed.current / DURATION,
         requested =
-          stage === 3
-            ? (manualVoltage ??
-              2 + 8 * progress * progress * (3 - 2 * progress))
-            : stage >= 2
-              ? (bias === "forward" ? 0.4 : 2) * progress
+          stage === 1
+            ? bias === "forward"
+              ? 0.4
+              : (manualVoltage ?? 0)
+            : stage === 3
+              ? (manualVoltage ?? 0)
               : 0;
       applied.current +=
         (requested - applied.current) *
@@ -53,15 +54,13 @@ export function usePresentationMotion(
       if (Math.abs(requested - applied.current) < 0.00001)
         applied.current = requested;
       const target = depletionWidth(stage, progress, applied.current, bias);
-      if (stage >= 2 || reducedMotion) width.current = target;
-      else width.current += (target - width.current) * (1 - Math.exp(-dt * 5));
-      if (Math.abs(target - width.current) < 0.001) width.current = target;
+      width.current = target;
       setFrame({
         time: clock.current,
         progress,
         width: width.current,
         voltage: applied.current,
-        pFraction: 2 / 3,
+        pFraction: 0.5,
       });
       // Thermal carrier motion is native CSS. Once the timeline settles there is
       // no React animation loop left running in an idle presentation.

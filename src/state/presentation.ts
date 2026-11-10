@@ -1,10 +1,5 @@
 import { createContext, useContext } from "react";
-import {
-  solveJunction,
-  widthToIllustration,
-  EQUILIBRIUM,
-  BUILT_IN_VOLTAGE_V,
-} from "../physics/model";
+import { solveLesson, LESSON_SCALE } from "../physics/lesson";
 export type BiasMode = "reverse" | "forward";
 export interface PresentationState {
   stage: number;
@@ -16,6 +11,8 @@ export interface PresentationState {
   reducedMotion: boolean;
   width: number;
   pFraction?: number;
+  lesson?: boolean;
+  breakdown?: "avalanche" | "zener";
 }
 export const PresentationContext = createContext<PresentationState>({
   stage: 0,
@@ -28,48 +25,43 @@ export const PresentationContext = createContext<PresentationState>({
   width: 30,
 });
 export const usePresentation = () => useContext(PresentationContext);
-// Introductory formation is narrative; biased stages share the same SI model.
+// Presentation width follows the same solution used by every graph.
 export function depletionWidth(
   stage: number,
-  progress: number,
+  _progress: number,
   voltage: number,
   bias: BiasMode,
 ) {
-  if (stage === 0) return 30;
-  const equilibrium = widthToIllustration(EQUILIBRIUM.widthM);
-  if (stage === 1) return 30 + (equilibrium - 30) * Math.min(1, progress / 0.7);
-  if (stage === 2 && bias === "forward")
-    return (
-      equilibrium *
-      Math.sqrt(
-        Math.max(0.05, BUILT_IN_VOLTAGE_V - voltage) / BUILT_IN_VOLTAGE_V,
-      )
-    );
-  return widthToIllustration(solveJunction(voltage).widthM);
+  return (
+    solveLesson(
+      stage === 3 ? "graded" : "abrupt",
+      stage === 1 && bias === "forward" ? -voltage : voltage,
+    ).widthM * LESSON_SCALE
+  );
 }
 export const chapters = [
   {
-    title: "Two sides.\nOne junction.",
+    title: "The equilibrium junction",
+    label: "Equilibrium",
     theory:
-      "P-type silicon has mostly holes. N-type silicon has mostly electrons. Where they meet, mobile charges begin to cross the boundary.",
-    label: "The PN junction",
+      "Fixed ions create an internal field—even at zero applied voltage. Equal doping gives equal depletion widths on the P and N sides. Outside depletion, the ideal model sets the field to zero.",
   },
   {
-    title: "An invisible\nfield takes shape.",
+    title: "Reverse bias: wider, stronger",
+    label: "Applying bias",
     theory:
-      "Electrons and holes diffuse and recombine, exposing fixed ions. Their field points from N to P. At equilibrium, drift balances diffusion.",
-    label: "The internal field",
+      "Reverse bias increases the potential barrier. More fixed ions are exposed as depletion widens, increasing the peak field. The ion density stays constant; the charged region becomes wider.",
   },
   {
-    title: "Change the voltage.\nChange the balance.",
+    title: "When reverse bias reaches its limit",
+    label: "Breakdown",
     theory:
-      "Connect P to negative and N to positive. Reverse bias draws majority carriers away, widening the barrier. Forward bias does the opposite.",
-    label: "Introducing a bias",
+      "At breakdown, reverse current rises sharply. Avalanche multiplies carriers through impact ionization; Zener breakdown allows electrons to tunnel across a narrow barrier in a heavily doped junction.",
   },
   {
-    title: "A wider gap.\nA stronger field.",
+    title: "A linearly graded junction",
+    label: "Graded doping",
     theory:
-      "Increase reverse bias to expose more fixed ions. The depletion region widens and the peak electric field rises with it.",
-    label: "The depletion region",
+      "Here, net doping changes linearly across the junction. Charge density is linear, the electric field is quadratic, and potential is cubic within depletion. Reverse bias still widens the region and increases the peak field.",
   },
 ];

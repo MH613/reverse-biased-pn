@@ -1,0 +1,648 @@
+/* Presentation composition: a persistent isometric scene above aligned profiles. */
+.is-presentation .presentation {
+  min-height: 570px;
+  display: grid;
+  grid-template-columns: 37% 63%;
+  grid-template-rows: minmax(300px, 1fr) auto;
+  column-gap: 0;
+  padding: 10px 0 24px;
+}
+.is-presentation .scene-position {
+  width: 52%;
+  left: 70%;
+  top: 130px;
+}
+.is-presentation .scene-camera {
+  transform-origin: 50% 50%;
+}
+.lesson-copy {
+  grid-column: 1;
+  grid-row: 1;
+  position: relative;
+  z-index: 2;
+  padding: 15px 15px 5px 0;
+  align-self: start;
+}
+.lesson-eyebrow {
+  display: block;
+  color: #737373;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.lesson-copy h1 {
+  font-size: clamp(28px, 2.65vw, 44px);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -1.6px;
+  margin: 0;
+  max-width: 460px;
+}
+.lesson-theory {
+  max-width: 410px;
+  color: #666;
+  font-size: 12px;
+  line-height: 1.75;
+  margin: 16px 0 0;
+}
+.lesson-copy .bias-control {
+  margin-top: 16px;
+}
+.lesson-copy .voltage-control {
+  margin-top: 16px;
+  width: 300px;
+}
+.lesson-equation {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  font-size: 15px;
+  margin-top: 17px;
+  color: #444;
+}
+.equation-divider {
+  align-self: center;
+  height: 16px;
+  border-left: 1px solid #ccc;
+  margin: 0 14px;
+}
+.variable {
+  position: relative;
+  display: inline-block;
+}
+.variable > button {
+  font-size: inherit;
+  padding: 1px;
+  border-bottom: 1px dotted #999;
+}
+.variable sub {
+  font-size: 0.65em;
+}
+.variable-tooltip {
+  position: absolute;
+  z-index: 20;
+  width: 215px;
+  padding: 12px 14px;
+  background: #fff;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 8px 26px #00000012;
+  left: -6px;
+  bottom: calc(100% + 9px);
+  font-size: 11px;
+  line-height: 1.6;
+  font-weight: 400;
+  letter-spacing: 0;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.variable.is-open .variable-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+.model-info-button {
+  font-size: 10px;
+  color: #666;
+  margin-top: 14px;
+  padding: 5px 0;
+  border-bottom: 1px solid #ddd;
+}
+.scene-summary {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: end;
+  justify-self: center;
+  text-align: center;
+  position: relative;
+  z-index: 3;
+  font-size: 10px;
+  color: #777;
+  margin-bottom: 8px;
+}
+.scene-summary > strong {
+  display: block;
+  font-size: 14px;
+  color: #444;
+  margin-top: 9px;
+  font-weight: 500;
+}
+.lesson-metrics {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-top: 12px;
+}
+.lesson-metrics > span {
+  min-width: 90px;
+}
+.lesson-metrics strong {
+  display: block;
+  color: #222;
+  font-size: 23px;
+  font-weight: 500;
+  letter-spacing: -0.6px;
+  font-variant-numeric: tabular-nums;
+  margin-top: 5px;
+}
+.lesson-metrics small {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: #777;
+}
+.lesson-dashboard {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  position: relative;
+  z-index: 2;
+  padding-top: 18px;
+}
+.dashboard-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 9px;
+  color: #777;
+  margin: 0 2px 10px;
+}
+.dashboard-caption label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.dashboard-caption input {
+  accent-color: #333;
+}
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.profile-grid.two-profiles {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.profile-card {
+  color: #eee;
+  background: #202020;
+  border: 1px solid #303030;
+  border-radius: 18px;
+  padding: 15px 16px 12px;
+  min-width: 0;
+  overflow: hidden;
+}
+.card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.card-heading h2 {
+  font-size: 12px;
+  font-weight: 500;
+  margin: 0;
+}
+.card-heading > span {
+  font-size: 9px;
+  color: #bcbcbc;
+}
+.profile-card > svg {
+  width: 100%;
+  height: clamp(130px, 17vh, 195px);
+  margin-top: 9px;
+  overflow: visible;
+}
+.profile-grid.two-profiles .profile-card > svg {
+  height: clamp(140px, 19vh, 215px);
+}
+.graph-grid {
+  stroke: #ffffff0e;
+  fill: none;
+  stroke-width: 1;
+}
+.graph-zero {
+  stroke: #ffffff45;
+  fill: none;
+}
+.graph-ticks {
+  fill: #bcbcbc;
+  font:
+    9px Inter,
+    sans-serif;
+}
+.graph-boundary {
+  stroke: #ffffff45;
+  fill: none;
+  stroke-dasharray: 3 5;
+}
+.profile-line {
+  stroke: #e6e6e6;
+  stroke-width: 2;
+  fill: none;
+  stroke-linejoin: miter;
+}
+.profile-reference {
+  stroke: #999;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  fill: none;
+}
+.fermi-line {
+  stroke: #aaa;
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  fill: none;
+}
+.band-labels {
+  fill: #eee;
+  font:
+    10px Inter,
+    sans-serif;
+}
+.card-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 8px;
+  color: #bbb;
+  line-height: 1.5;
+}
+.is-breakdown .profile-grid {
+  grid-template-columns: 2fr 1fr;
+}
+.mechanism-note {
+  background: #f5f5f5;
+  border-radius: 18px;
+  padding: 24px;
+}
+.mechanism-note h2 {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.6px;
+  margin: 0;
+  line-height: 1.2;
+}
+.mechanism-note p {
+  font-size: 11px;
+  color: #666;
+  line-height: 1.7;
+}
+.mechanism-limit {
+  display: block;
+  font-size: 9px;
+  color: #777;
+  line-height: 1.6;
+  margin-top: 14px;
+}
+.mechanism-labels {
+  font:
+    12px Inter,
+    sans-serif;
+  fill: #ddd;
+}
+.multiplication-electron {
+  animation: impact 2.6s linear infinite;
+}
+.tunneling-electron {
+  animation: tunnel 2.6s ease-in-out infinite;
+}
+@keyframes impact {
+  from {
+    transform: translateX(-65px);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  to {
+    transform: translateX(165px);
+    opacity: 0.3;
+  }
+}
+@keyframes tunnel {
+  0%,
+  20% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  75%,
+  100% {
+    transform: translate(110px, 44px);
+    opacity: 0.3;
+  }
+}
+.model-details {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  z-index: 12;
+  width: min(560px, 100%);
+  max-height: 90%;
+  overflow-y: auto;
+  padding: 25px;
+  border: 1px solid #ddd;
+  border-radius: 16px;
+  background: #fffffff5;
+  box-shadow: 0 15px 60px #00000015;
+}
+.model-details > button {
+  float: right;
+  font-size: 11px;
+}
+.model-details h2 {
+  font-size: 20px;
+  font-weight: 500;
+}
+.model-details p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #666;
+}
+.is-presentation .inspection {
+  top: 16px;
+  right: 0;
+}
+.is-home .intro-copy {
+  padding-top: 22px;
+}
+.is-home .intro-copy h1 {
+  font-size: clamp(26px, 3.1vw, 48px);
+  line-height: 1.14;
+  letter-spacing: -1.8px;
+  white-space: normal;
+  margin: auto;
+  max-width: 1050px;
+}
+.is-home .intro-copy .theory {
+  max-width: 500px;
+  margin-top: 16px;
+}
+.is-home .scene-position {
+  top: 64%;
+  width: 65vw;
+}
+.is-home .scene-camera {
+  animation: lesson-float 8s ease-in-out infinite;
+}
+@keyframes lesson-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -8px;
+  }
+}
+@media (min-width: 760px) {
+  .header {
+    height: 70px;
+  }
+  .footer {
+    height: 65px;
+  }
+}
+@media (min-height: 900px) and (min-width: 1000px) {
+  .is-presentation .scene-position {
+    top: 145px;
+    width: 52%;
+  }
+  .is-presentation .presentation {
+    grid-template-rows: minmax(390px, 1fr) auto;
+  }
+}
+@media (max-width: 1050px) and (min-width: 760px) {
+  .lesson-copy h1 {
+    font-size: 29px;
+  }
+  .lesson-theory {
+    font-size: 11px;
+  }
+  .lesson-metrics {
+    gap: 14px;
+  }
+  .profile-card {
+    padding: 14px 10px 10px;
+  }
+  .card-heading {
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .card-caption {
+    font-size: 7px;
+  }
+}
+@media (max-width: 759px) {
+  .is-presentation .presentation {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 0 24px;
+    min-height: 0;
+  }
+  .lesson-copy {
+    padding: 15px 0 0;
+  }
+  .lesson-copy h1 {
+    font-size: 32px;
+    max-width: 450px;
+  }
+  .lesson-theory {
+    font-size: 12px;
+    max-width: 450px;
+  }
+  .is-presentation .scene-position {
+    position: relative;
+    order: 1;
+    left: auto;
+    top: auto;
+    transform: none;
+    width: 112%;
+    margin: 0 -6%;
+    height: 280px;
+    display: flex;
+    align-items: center;
+  }
+  .lesson-copy {
+    order: 0;
+  }
+  .scene-summary {
+    order: 2;
+    margin-top: -25px;
+    align-self: center;
+  }
+  .lesson-dashboard {
+    order: 3;
+    width: 100%;
+    padding-top: 22px;
+  }
+  .profile-grid,
+  .profile-grid.two-profiles,
+  .is-breakdown .profile-grid {
+    grid-template-columns: 1fr;
+  }
+  .profile-card > svg,
+  .profile-grid.two-profiles .profile-card > svg {
+    height: 180px;
+  }
+  .dashboard-caption {
+    align-items: flex-start;
+    line-height: 1.6;
+    flex-direction: column;
+  }
+  .card-heading h2 {
+    font-size: 13px;
+  }
+  .card-caption {
+    font-size: 9px;
+  }
+  .lesson-metrics {
+    gap: 12px;
+  }
+  .lesson-metrics strong {
+    font-size: 21px;
+  }
+  .lesson-metrics .variable-tooltip {
+    left: auto;
+    right: 0;
+  }
+  .is-home .presentation {
+    min-height: 700px;
+  }
+  .is-home .intro-copy {
+    padding-top: 24px;
+  }
+  .is-home .intro-copy h1 {
+    font-size: clamp(25px, 6.8vw, 38px);
+    line-height: 1.2;
+    letter-spacing: -1px;
+  }
+  .desktop-break {
+    display: none;
+  }
+  .is-home .scene-position {
+    top: 64%;
+    width: 105vw;
+  }
+  .is-home .intro-copy .theory {
+    font-size: 11px;
+    max-width: 280px;
+  }
+  .is-presentation .inspection {
+    top: 300px;
+  }
+  .model-details {
+    position: fixed;
+    top: 90px;
+    left: 5%;
+    width: 90%;
+    max-height: 70svh;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .multiplication-electron,
+  .tunneling-electron,
+  .is-home .scene-camera {
+    animation: none;
+  }
+}
+.avalanche-carrier {
+  animation: avalanche-pulse 1.8s ease-in-out infinite;
+}
+@keyframes avalanche-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+    translate: -8px 0;
+  }
+  50% {
+    opacity: 1;
+    translate: 8px 0;
+  }
+}
+.breakdown-card svg * {
+  animation-play-state: inherit;
+}
+@media (prefers-reduced-motion: reduce) {
+  .avalanche-carrier {
+    animation: none;
+  }
+}
+
+@media (min-width: 760px) and (max-height: 850px) {
+  .lesson-copy h1 {
+    font-size: 30px;
+  }
+  .lesson-copy {
+    padding-top: 8px;
+  }
+  .lesson-eyebrow {
+    margin-bottom: 10px;
+  }
+  .lesson-theory {
+    font-size: 11px;
+    line-height: 1.65;
+    margin-top: 12px;
+  }
+  .lesson-copy .bias-control,
+  .lesson-copy .voltage-control {
+    margin-top: 12px;
+  }
+  .lesson-equation {
+    margin-top: 12px;
+    font-size: 14px;
+  }
+  .lesson-copy .voltage-control input {
+    margin: 16px 0 9px;
+  }
+  .model-info-button {
+    margin-top: 8px;
+  }
+  .profile-card > svg,
+  .profile-grid.two-profiles .profile-card > svg {
+    height: 130px;
+  }
+  .is-presentation .scene-position {
+    width: 48%;
+    top: 110px;
+  }
+  .lesson-metrics strong {
+    font-size: 21px;
+  }
+  .is-home .intro-copy h1 {
+    font-size: 36px;
+  }
+}
+@media (min-width: 760px) and (max-height: 850px) {
+  .is-home .scene-position {
+    top: 61%;
+  }
+}
+@media (min-width: 760px) and (max-height: 640px) {
+  .is-home .presentation {
+    min-height: 650px;
+  }
+}
+input,
+output {
+  font-family: inherit;
+  color: inherit;
+}
+.graded-comparison {
+  font-size: 10px;
+  color: #777;
+  margin: 10px 0 0;
+  line-height: 1.6;
+}
+.band-card .variable-tooltip {
+  left: auto;
+  right: 0;
+  bottom: calc(100% + 12px);
+}
+.band-card {
+  overflow: visible;
+}

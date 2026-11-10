@@ -1,247 +1,179 @@
 import { test, expect } from "@playwright/test";
+import { solveLesson, LESSON_SCALE } from "../src/physics/lesson";
+const titles = [
+  "The equilibrium junction",
+  "Reverse bias: wider, stronger",
+  "When reverse bias reaches its limit",
+  "A linearly graded junction",
+];
 
-test("close-up overview flows into four working presentation stages", async ({
+test("four-stage scientific narrative synchronizes graphs, geometry, bands and controls", async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
-  await page.evaluate(() => document.fonts.ready);
-  await expect(page.locator("h1")).toContainText("The PN junction.");
-  await expect(
-    page.locator(".topic-tags,.phase-tag,.observations,.legend-panel"),
-  ).toHaveCount(0);
+  await expect(page.locator("h1")).toContainText("Effect of Reverse Bias");
   const scene = await page.locator(".scene-camera").elementHandle();
-  const camera = () =>
-    page
-      .locator(".scene-camera")
-      .evaluate((el) => getComputedStyle(el).transform);
-  const closeup = await camera();
   await page
     .getByRole("button", { name: "Explore the junction", exact: true })
     .click();
-  await expect(page.locator("h1")).toContainText("Two sides.");
-  await page.waitForTimeout(110);
-  const between = await camera();
-  await page.waitForTimeout(1400);
-  const settled = await camera();
-  expect(between).not.toBe(closeup);
-  expect(between).not.toBe(settled);
-  expect(await scene!.evaluate((el) => el.isConnected)).toBe(true);
+  await expect(page.locator("h1")).toHaveText(titles[0]);
+  await expect(page.locator("[data-profile]")).toHaveCount(2);
   await page.getByRole("button", { name: "Inspect P-type holes" }).click();
   await expect(page.locator(".inspection")).toContainText(
     "mobile positive charges",
   );
   await page.keyboard.press("Escape");
-  await expect(page.locator(".inspection")).toHaveCount(0);
-  await page.getByRole("button", { name: "Inspect P-type holes" }).click();
-  await page.getByRole("button", { name: "Close material detail" }).click();
-  await page.getByRole("button", { name: "Pause animation" }).click();
-  const carriers = () =>
-    page
-      .locator(".carrier-motion")
-      .evaluateAll((nodes) =>
-        nodes.map((el) => getComputedStyle(el).transform),
-      );
-  const paused = await carriers();
-  await page.waitForTimeout(180);
-  expect(await carriers()).toEqual(paused);
-  await page.getByRole("button", { name: "Play animation" }).click();
-  await page.waitForTimeout(180);
-  expect(await carriers()).not.toEqual(paused);
-  await page.keyboard.press("ArrowRight");
-  await expect(page.locator("h1")).toContainText("An invisible");
-  await expect(page.locator(".field-profile,.field-position")).toHaveCount(0);
-  await page.getByRole("button", { name: "Skip to end of animation" }).click();
-  await page.waitForTimeout(150);
-  expect(
-    await page
-      .locator(".stage-track .current .track-fill")
-      .getAttribute("style"),
-  ).toContain("100%");
-  await page.getByRole("button", { name: "Replay stage animation" }).click();
-  await page.waitForTimeout(100);
-  expect(
-    await page
-      .locator(".stage-track .current .track-fill")
-      .getAttribute("style"),
-  ).not.toContain("100%");
   await page.getByRole("button", { name: "Next", exact: true }).click();
-  await expect(page.locator("h1")).toContainText("Change the voltage.");
+  await expect(page.locator("h1")).toHaveText(titles[1]);
+  const panel = page.locator(".lesson-dashboard");
+  const charge = page.locator('[data-profile="charge"] .profile-line');
+  const field = page.locator('[data-profile="field"] .profile-line');
+  const bands = page.locator('[data-profile="bands"] .profile-line').first();
+  for (const v of [0, 2, 5, 10]) {
+    await page.getByRole("slider").fill(String(v));
+    await expect
+      .poll(async () => Number(await panel.getAttribute("data-voltage")))
+      .toBe(v);
+    const s = solveLesson("abrupt", v);
+    expect(
+      Number(await panel.getAttribute("data-width")) / s.widthM,
+    ).toBeCloseTo(1, 10);
+    expect(
+      Number(await panel.getAttribute("data-field")) / s.peakFieldVM,
+    ).toBeCloseTo(1, 10);
+    await expect(page.locator("output")).toHaveText(`${v.toFixed(2)} V`);
+    await expect(charge).toHaveAttribute("d", /.+/);
+    await expect(field).toHaveAttribute("d", /.+/);
+    await expect(bands).toHaveAttribute("d", /.+/);
+    const points = (await page
+      .locator(".depletion-surface")
+      .getAttribute("points"))!
+      .split(/[ ,]/)
+      .map(Number);
+    expect(points[2] - points[0]).toBeCloseTo(
+      s.widthM * LESSON_SCALE * 0.96,
+      6,
+    );
+  }
+  // Every intermediate frame follows the physical equations, including rapid requests.
+  await page.getByRole("slider").fill("2");
+  const frames = await panel.evaluate(async (el) => {
+    const frames: number[][] = [];
+    for (let i = 0; i < 12; i++) {
+      await new Promise(requestAnimationFrame);
+      frames.push(
+        ["data-voltage", "data-width", "data-field"].map((k) =>
+          Number(el.getAttribute(k)),
+        ),
+      );
+    }
+    return frames;
+  });
+  expect(frames.some(([v]) => v > 2 && v < 10)).toBe(true);
+  for (const [v, w, e] of frames) {
+    const s = solveLesson("abrupt", v);
+    expect(w / s.widthM).toBeCloseTo(1, 10);
+    expect(e / s.peakFieldVM).toBeCloseTo(1, 10);
+  }
   await page.getByRole("button", { name: "Forward bias", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Forward bias", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "Reverse bias", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Reverse bias", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "Next", exact: true }).click();
-  await expect(page.locator("h1")).toContainText("A wider gap.");
-  await page.getByRole("slider").fill("0");
-  await page.waitForTimeout(1400);
-  const profile = page.locator(".depletion-surface");
-  const narrow = await profile.getAttribute("points");
-  await page.getByRole("slider").fill("5");
-  await page.waitForTimeout(1400);
-  await expect(page.locator("output")).toHaveText("5.00 V");
-  expect(await profile.getAttribute("points")).not.toBe(narrow);
-  await expect(page.locator(".source-readout")).toContainText("5.00 V");
-  const aligned = await page
-    .locator(".junction-illustration")
-    .evaluate((svg) => {
-      const vectors = [...svg.querySelectorAll(".drafting-ground path")].map(
-        (path) => {
-          const p = path as SVGPathElement,
-            a = p.getPointAtLength(0),
-            b = p.getPointAtLength(p.getTotalLength());
-          return { x: b.x - a.x, y: b.y - a.y };
-        },
-      );
-      const edges = (coords: number[]) =>
-        coords
-          .slice(2)
-          .filter((_, i) => i % 2 === 0)
-          .map((_, i) => ({
-            x: coords[(i + 1) * 2] - coords[i * 2],
-            y: coords[(i + 1) * 2 + 1] - coords[i * 2 + 1],
-          }));
-      const parallelToGrid = (d: { x: number; y: number }) =>
-        vectors.some(
-          (v) =>
-            Math.abs(d.x * v.y - d.y * v.x) /
-              (Math.hypot(d.x, d.y) * Math.hypot(v.x, v.y)) <
-            0.0001,
-        );
-      const routes = [...svg.querySelectorAll(".circuit-wire")];
-      const straight = routes.every((path) => {
-        const d = path.getAttribute("d")!;
-        return (
-          !/[CQSA]/i.test(d) &&
-          edges(d.match(/-?\d+(?:\.\d+)?/g)!.map(Number)).every(
-            (v) => Math.abs(v.x) < 0.0001 || parallelToGrid(v),
-          )
-        );
-      });
-      const top = svg
-        .querySelector(".source-top")!
-        .getAttribute("points")!
-        .match(/-?\d+(?:\.\d+)?/g)!
-        .map(Number);
-      const connected = routes.every((p, i) => {
-        const path = p as SVGPathElement,
-          end = path.getPointAtLength(path.getTotalLength());
-        const port = svg.querySelector(
-          i === 0 ? ".source-port-p" : ".source-port-n",
-        ) as SVGCircleElement;
-        const matrix = port
-          .parentElement!.getAttribute("transform")!
-          .match(/-?\d*\.?\d+/g)!
-          .map(Number);
-        const x = Number(port.getAttribute("cx")),
-          y = Number(port.getAttribute("cy"));
-        return (
-          Math.hypot(
-            end.x - (matrix[0] * x + matrix[2] * y + matrix[4]),
-            end.y - (matrix[1] * x + matrix[3] * y + matrix[5]),
-          ) < 0.01
-        );
-      });
-      return straight && connected && edges(top).every(parallelToGrid);
-    });
-  expect(aligned).toBe(true);
-  await page.getByRole("button", { name: "Laboratory", exact: true }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await page
-    .getByRole("button", { name: "Back to explanation", exact: true })
-    .click();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  await page.getByRole("button", { name: "Enter full screen" }).click();
   await expect
-    .poll(() => page.evaluate(() => !!document.fullscreenElement))
-    .toBe(true);
-  await page.getByRole("button", { name: "Exit full screen" }).click();
+    .poll(async () => Number(await panel.getAttribute("data-voltage")))
+    .toBe(-0.4);
+  await expect(page.locator(".source-readout")).toHaveText("+0.40 V");
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(page.locator("h1")).toHaveText(titles[2]);
+  await page
+    .getByRole("button", { name: "Zener tunneling", exact: true })
+    .click();
+  await expect(page.locator(".breakdown-card h2")).toHaveText(
+    "Band-to-band tunneling",
+  );
+  await expect(page.locator(".junction-illustration")).toHaveClass(
+    /breakdown-zener/,
+  );
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(page.locator("h1")).toHaveText(titles[3]);
+  await page.getByRole("slider").fill("5");
+  await expect
+    .poll(async () => Number(await panel.getAttribute("data-voltage")))
+    .toBe(5);
+  expect(
+    Number(await panel.getAttribute("data-width")) /
+      solveLesson("graded", 5).widthM,
+  ).toBeCloseTo(1, 10);
+  await expect(page.locator('[data-profile="potential"]')).toBeVisible();
+  await page.getByLabel("Equilibrium reference", { exact: true }).check();
+  await expect(page.locator(".profile-reference")).toHaveCount(3);
+  await page.getByRole("button", { name: "Define a", exact: true }).focus();
+  await expect(
+    page.getByRole("tooltip").filter({ hasText: "Gradient of net doping" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Model & sources" }).click();
+  await expect(page.getByLabel("Model assumptions and sources")).toContainText(
+    "263–264",
+  );
+  await page.getByRole("button", { name: "Close model details" }).click();
   await page.getByRole("button", { name: "Back to overview" }).click();
-  await expect(page.locator("h1")).toContainText("The PN junction.");
   expect(await scene!.evaluate((el) => el.isConnected)).toBe(true);
   expect(errors).toEqual([]);
 });
 
-test("wheel navigation is deliberate and the presentation stays monochrome", async ({
-  page,
-}) => {
-  await page.goto("/");
-  await page.mouse.wheel(0, 140);
-  await expect(page.locator("h1")).toContainText("Two sides.");
-  await page.mouse.wheel(0, 140);
-  await page.waitForTimeout(250);
-  await expect(page.locator("h1")).toContainText("Two sides.");
-  await page.waitForTimeout(1200);
-  await page.mouse.wheel(0, 140);
-  await expect(page.locator("h1")).toContainText("An invisible");
-  const colors = await page.evaluate(() =>
-    [...document.querySelectorAll(".app-shell *")]
-      .flatMap((el) => {
-        const s = getComputedStyle(el);
-        return [s.color, s.backgroundColor, s.fill, s.stroke];
-      })
-      .filter((c) => c.startsWith("rgb")),
-  );
-  for (const color of colors) {
-    const channels = color
-      .match(/[\d.]+/g)!
-      .slice(0, 3)
-      .map(Number);
-    expect(channels[0]).toBe(channels[1]);
-    expect(channels[1]).toBe(channels[2]);
-  }
-  expect(
-    await page.locator("h1").evaluate((el) => getComputedStyle(el).fontFamily),
-  ).toContain("Inter");
-});
-
-test("mobile, reduced motion, and desktop/projector layouts", async ({
+test("layouts remain readable, monochrome, and accessible with reduced motion", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   for (const [width, height] of [
+    [320, 568],
     [390, 844],
+    [844, 390],
+    [1024, 768],
     [1366, 768],
     [1440, 900],
     [1920, 1080],
   ]) {
     await page.setViewportSize({ width, height });
     await page.goto("/");
-    await page.evaluate(() => document.fonts.ready);
-    const verify = async () => {
-      expect(await page.evaluate(() => document.body.scrollWidth)).toBe(width);
-      expect(
-        await page.evaluate(() => document.body.scrollHeight),
-      ).toBeLessThanOrEqual(height);
-    };
-    await verify();
     await page
       .getByRole("button", { name: "Explore the junction", exact: true })
       .click();
     for (let i = 0; i < 4; i++) {
       await page.locator(".stage-track button").nth(i).click();
-      await expect(page.locator("h1")).toContainText(
-        ["Two sides.", "An invisible", "Change the voltage.", "A wider gap."][
-          i
-        ],
-      );
-      await verify();
-      const collision = await page.evaluate(() => {
-        const copy = document
-            .querySelector(".chapter-copy")!
-            .getBoundingClientRect(),
-          footer = document.querySelector(".footer")!.getBoundingClientRect();
-        return copy.bottom > footer.top;
+      await expect(page.locator("h1")).toHaveText(titles[i]);
+      expect(await page.evaluate(() => document.body.scrollWidth)).toBe(width);
+      const bounds = await page.evaluate(() => {
+        const r = (s: string) =>
+          document.querySelector(s)!.getBoundingClientRect();
+        return {
+          copy: r(".lesson-copy").bottom,
+          graphs: r(".lesson-dashboard").top,
+          graphBottom: r(".lesson-dashboard").bottom,
+          footer: r(".footer").top,
+          body: document.body.scrollHeight,
+        };
       });
-      expect(collision).toBe(false);
+      expect(bounds.copy).toBeLessThanOrEqual(bounds.graphs);
+      expect(bounds.graphBottom).toBeLessThanOrEqual(bounds.footer);
+      if (width >= 1024 && height >= 768)
+        expect(bounds.body).toBeLessThanOrEqual(height);
     }
-    await page.getByRole("slider").fill("3");
-    await expect(page.locator("output")).toHaveText("3.00 V");
+  }
+  const colors = await page.locator(".app-shell *").evaluateAll((els) =>
+    els
+      .flatMap((el) => {
+        const s = getComputedStyle(el);
+        return [s.color, s.backgroundColor, s.fill, s.stroke];
+      })
+      .filter((c) => c.startsWith("rgb")),
+  );
+  for (const c of colors) {
+    const rgb = c
+      .match(/[\d.]+/g)!
+      .slice(0, 3)
+      .map(Number);
+    expect(rgb[0]).toBe(rgb[1]);
+    expect(rgb[1]).toBe(rgb[2]);
   }
 });

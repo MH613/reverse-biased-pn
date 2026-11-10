@@ -18,7 +18,7 @@ test('overview keeps title, junction and discovery controls vertically separated
     await page.setViewportSize({ width, height });
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
-    await expect(page.locator('h1')).toHaveText('The PN junction.');
+    await expect(page.locator('h1')).toContainText('Effect of Reverse Bias');
     const bounds = await page.evaluate(() => {
       const rect = (selector: string) => {
         const r = document.querySelector(selector)!.getBoundingClientRect();
@@ -43,9 +43,9 @@ test('lab opens from every stage, contains keyboard focus, and restores the pres
   await page.getByRole('button', { name: 'Explore the junction', exact: true }).click();
   for (let i = 0; i < 4; i++) {
     await page.locator('.stage-track button').nth(i).click();
-    const title = ['Two sides.', 'An invisible', 'Change the voltage.', 'A wider gap.'][i];
+    const title = ['The equilibrium junction', 'Reverse bias: wider, stronger', 'When reverse bias reaches its limit', 'A linearly graded junction'][i];
     await expect(page.locator('h1')).toContainText(title);
-    if (i === 2) await page.getByRole('button', { name: 'Forward bias', exact: true }).click();
+    if (i === 1) await page.getByRole('button', { name: 'Forward bias', exact: true }).click();
     await page.getByRole('button', { name: 'Laboratory', exact: true }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
@@ -60,7 +60,7 @@ test('lab opens from every stage, contains keyboard focus, and restores the pres
     await expect(dialog).toHaveCount(0);
     await expect(page.locator('h1')).toContainText(title);
     await expect(page.locator('.lab-button')).toBeFocused();
-    if (i === 2) await expect(page.getByRole('button', { name: 'Forward bias', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    if (i === 1) await expect(page.getByRole('button', { name: 'Forward bias', exact: true })).toHaveAttribute('aria-pressed', 'true');
   }
 });
 

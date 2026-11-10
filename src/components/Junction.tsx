@@ -53,8 +53,11 @@ export function Junction({
     : (presentation.pFraction ?? 0.5);
   const left = 240 - width * fraction,
     right = 240 + width * (1 - fraction);
-  const connected = stage >= 2;
-  const connection = stage === 2 ? Math.min(1, progress * 3) : 1;
+  const connected = presentation.lesson
+    ? stage === 1 || stage === 3
+    : stage >= 2;
+  const connection =
+    !presentation.lesson && stage === 2 ? Math.min(1, progress * 3) : 1;
   const active = selected || hovered;
   const wireP: WorldPoint[] = [
     [0, 0, 36],
@@ -79,7 +82,7 @@ export function Junction({
   const Container = embedded ? "g" : "svg";
   return (
     <Container
-      className={`junction-illustration ${physical ? "has-physics" : ""}`}
+      className={`junction-illustration ${physical ? "has-physics" : ""} ${presentation.breakdown && !physical ? `breakdown-illustration breakdown-${presentation.breakdown}` : ""}`}
       data-depletion-width-m={physical?.widthM}
       data-p-boundary-m={physical ? -physical.xpM : undefined}
       data-n-boundary-m={physical?.xnM}
@@ -295,6 +298,13 @@ export function Junction({
         className="layer-fade"
       >
         {atomGrid.map(({ x, y }, i) => {
+          if (
+            !physical &&
+            presentation.lesson &&
+            stage === 3 &&
+            ((i * 37) % 101) / 101 > Math.abs(x - 240) / 240
+          )
+            return null;
           if (physical && x < 240 && ((i % 22) + Math.floor(i / 22)) % 2)
             return null;
           const exposed = x > left && x < right;
@@ -330,7 +340,7 @@ export function Junction({
           const minority = i === 10 || i === 29;
 
           let cx = x;
-          if (stage > 0 && !physical) {
+          if ((stage > 0 || presentation.lesson) && !physical) {
             const edge = isP
               ? left - 13 - (i % 3) * 3
               : right + 13 + (i % 3) * 3;
@@ -395,7 +405,7 @@ export function Junction({
           );
         })}
       </g>
-      {stage === 1 && (
+      {stage === 1 && !presentation.lesson && (
         <g
           opacity={Math.min(1, progress * 16) * Math.max(0, 1 - progress * 1.6)}
         >
@@ -421,7 +431,9 @@ export function Junction({
         </g>
       )}
       <g
-        opacity={stage > 0 ? Math.min(1, progress * 2) : 0}
+        opacity={
+          stage > 0 || presentation.lesson ? Math.min(1, progress * 5) : 0
+        }
         stroke="#828282"
         strokeWidth="1.2"
         fill="none"
@@ -439,6 +451,48 @@ export function Junction({
           );
         })}
       </g>
+      {presentation.breakdown && !physical && (
+        <g
+          className="breakdown-carriers"
+          style={{
+            animationPlayState: presentation.playing ? "running" : "paused",
+          }}
+        >
+          {presentation.breakdown === "avalanche" ? (
+            [0, 1, 2, 3, 4, 5].map((i) => {
+              const p = project(
+                left + 20 + (i % 3) * 45,
+                32 + Math.floor(i / 3) * 70,
+                72,
+              );
+              return (
+                <circle
+                  key={i}
+                  className="avalanche-carrier"
+                  cx={p[0]}
+                  cy={p[1]}
+                  r="4"
+                  fill={i % 2 ? "#fff" : "#333"}
+                  stroke="#555"
+                  style={{
+                    animationDelay: `-${i * 0.3}s`,
+                    animationPlayState: presentation.playing
+                      ? "running"
+                      : "paused",
+                  }}
+                />
+              );
+            })
+          ) : (
+            <path
+              d={`M${project(left - 14, 85, 72)} L${project(right + 14, 85, 72)}`}
+              stroke="#444"
+              strokeWidth="2"
+              strokeDasharray="3 3"
+            />
+          )}
+        </g>
+      )}
       <g
         className="figure-labels"
         fill="#555555"
@@ -451,7 +505,7 @@ export function Junction({
         <text x={project(430, 185, 74)[0]} y={project(430, 185, 74)[1]}>
           N
         </text>
-        {stage > 0 && (
+        {(stage > 0 || presentation.lesson) && (
           <>
             <path
               d={`M${project(left, 176, 65)} l0,-18 M${project(right, 176, 65)} l0,-18 M${project(left, 176, 78)} L${project(right, 176, 78)}`}

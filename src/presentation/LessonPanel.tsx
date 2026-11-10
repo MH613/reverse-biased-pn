@@ -1,0 +1,742 @@
+import { useId, useState, type ReactNode } from "react";
+import { motion } from "motion/react";
+import {
+  chapters,
+  type BiasMode,
+  usePresentation,
+} from "../state/presentation";
+import {
+  solveLesson,
+  lessonCharge,
+  lessonField,
+  lessonPotential,
+  type LessonSolution,
+  ABRUPT_VBI,
+  GRADED_VBI,
+} from "../physics/lesson";
+
+const definitions: Record<string, string> = {
+  rho: "Volume charge density, in C/m³. In the graded model, ρ(x) = qax within depletion.",
+  EFp: "P-side neutral-region Fermi level, used as the zero energy reference.",
+  EFn: "N-side neutral-region Fermi level. Under reverse bias it lies qVR below the P-side level.",
+  W: "Total depletion width, measured in micrometres (µm).",
+  Vbi: "Built-in potential at thermal equilibrium, in volts. It stays fixed as applied bias changes.",
+  VR: "Applied reverse-voltage magnitude, in volts. P is negative relative to N.",
+  Emax: "Greatest electric-field magnitude, at the metallurgical junction, in V/m.",
+  NA: "Net acceptor concentration in the P region, in m⁻³.",
+  ND: "Net donor concentration in the N region, in m⁻³.",
+  a: "Gradient of net doping concentration: 10²⁸ m⁻⁴ (10²⁰ cm⁻⁴).",
+  q: "Positive elementary charge: 1.602176634 × 10⁻¹⁹ coulombs.",
+  x: "Position from the metallurgical junction; positive toward N.",
+};
+export function Variable({
+  name,
+  children,
+}: {
+  name: string;
+  children?: ReactNode;
+}) {
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  return (
+    <span
+      className={`variable ${open ? "is-open" : ""}`}
+      onPointerEnter={(e) => {
+        if (e.pointerType === "mouse") setOpen(true);
+      }}
+      onPointerLeave={(e) => {
+        if (e.pointerType === "mouse") setOpen(false);
+      }}
+    >
+      <button
+        type="button"
+        aria-label={`Define ${name}`}
+        aria-describedby={id}
+        aria-expanded={open}
+        onClick={() => setOpen(true)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setOpen(false);
+        }}
+      >
+        {children ?? name}
+      </button>
+      <span className="variable-tooltip" role="tooltip" id={id}>
+        {definitions[name]}
+      </span>
+    </span>
+  );
+}
+const XMAX = 1.2e-6;
+const px = (x: number) => 44 + ((x + XMAX) / (2 * XMAX)) * 308;
+const sample = (
+  f: (x: number) => number,
+  y: (v: number) => number,
+  s: LessonSolution,
+) => {
+  // Include physical boundaries exactly, including the junction apex.
+  const xs = [
+    ...Array.from({ length: 181 }, (_, i) => -XMAX + (i / 180) * 2 * XMAX),
+    -s.half,
+    0,
+    s.half,
+  ].sort((a, b) => a - b);
+  return xs
+    .map((x, i) => `${i ? "L" : "M"}${px(x).toFixed(3)},${y(f(x)).toFixed(3)}`)
+    .join(" ");
+};
+function Profile({
+  type,
+  s,
+  reference,
+}: {
+  type: "charge" | "field" | "potential";
+  s: LessonSolution;
+  reference: boolean;
+}) {
+  const id = useId().replace(/:/g, "");
+  const { progress, reducedMotion } = usePresentation();
+  const field = type === "field",
+    potential = type === "potential";
+  const title = field
+    ? "Electric field"
+    : potential
+      ? "Electrostatic potential"
+      : "Space charge";
+  const max = field ? 1.5e7 : potential ? 11 : 2100;
+  const y = (v: number) =>
+    potential
+      ? 158 - (v / max) * 124
+      : field
+        ? 42 - (v / max) * 116
+        : 98 - (v / max) * 60;
+  const f = field ? lessonField : potential ? lessonPotential : lessonCharge;
+  const makePath = (sol: LessonSolution) => {
+    if (type === "charge" && sol.kind === "abrupt") {
+      const b = sol.half,
+        r = lessonCharge(b / 2, sol);
+      return [
+        [-XMAX, 0],
+        [-b, 0],
+        [-b, -r],
+        [0, -r],
+        [0, r],
+        [b, r],
+        [b, 0],
+        [XMAX, 0],
+      ]
+        .map(([x, v], i) => `${i ? "L" : "M"}${px(x)},${y(v)}`)
+        .join(" ");
+    }
+    if (type === "charge") {
+      const b = sol.half,
+        r = lessonCharge(b, sol);
+      return [
+        [-XMAX, 0],
+        [-b, 0],
+        [-b, -r],
+        [b, r],
+        [b, 0],
+        [XMAX, 0],
+      ]
+        .map(([x, v], i) => `${i ? "L" : "M"}${px(x)},${y(v)}`)
+        .join(" ");
+    }
+    return sample((x) => f(x, sol), y, sol);
+  };
+  const d = makePath(s),
+    eq = solveLesson(s.kind, 0);
+  return (
+    <article className="profile-card" data-profile={type}>
+      <div className="card-heading">
+        <h2>{title}</h2>
+        <span>
+          {field ? "E(x) · MV/m" : potential ? "φ(x) · V" : "ρ(x) · kC/m³"}
+        </span>
+      </div>
+      <svg
+        viewBox="0 0 380 194"
+        role="img"
+        aria-label={`${title} against position; ${field ? "negative toward P" : potential ? "zero at the P depletion boundary" : "negative on P, positive on N"}`}
+      >
+        <defs>
+          <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+            <stop stopColor="#fff" stopOpacity=".22" />
+            <stop offset="1" stopColor="#fff" stopOpacity=".02" />
+          </linearGradient>
+          <clipPath id={`${id}-reveal`}>
+            <rect
+              x="0"
+              y="0"
+              height="194"
+              width={reducedMotion ? 380 : 380 * Math.min(1, progress * 5)}
+            />
+          </clipPath>
+        </defs>
+        <g className="graph-grid">
+          {[-1, 0, 1].map((x) => (
+            <path key={x} d={`M${px(x * 1e-6)},24 V158`} />
+          ))}
+          {[42, 98, 158].map((v) => (
+            <path key={v} d={`M44,${v} H352`} />
+          ))}
+        </g>
+        <path className="graph-zero" d={`M44,${y(0)} H352`} />
+        <g className="graph-ticks">
+          <text x="8" y={potential ? 34 : field ? 46 : 42}>
+            {potential ? "11" : field ? "0" : "+2.1"}
+          </text>
+          <text x="8" y={potential ? 160 : field ? 160 : 101}>
+            {potential ? "0" : field ? "−15" : "0"}
+          </text>
+          {!field && !potential && (
+            <text x="8" y="160">
+              −2.1
+            </text>
+          )}
+          {[-1, 0, 1].map((v) => (
+            <text key={v} x={px(v * 1e-6)} y="180" textAnchor="middle">
+              {v === 1 ? "+1" : v === -1 ? "−1" : "0"}
+            </text>
+          ))}
+          <text x="372" y="180" textAnchor="end">
+            µm
+          </text>
+        </g>
+        {[-s.half, s.half].map((b, i) => (
+          <path key={i} className="graph-boundary" d={`M${px(b)},24 V158`} />
+        ))}
+        {reference && <path className="profile-reference" d={makePath(eq)} />}
+        <g clipPath={`url(#${id}-reveal)`}>
+          <path d={`${d} L352,${y(0)} L44,${y(0)} Z`} fill={`url(#${id})`} />
+          <path className="profile-line" d={d} />
+          {field && (
+            <circle cx={px(0)} cy={y(-s.peakFieldVM)} r="3" fill="#fff" />
+          )}
+        </g>
+      </svg>
+      <div className="card-caption">
+        <span>P region</span>
+        <span>
+          {potential
+            ? "−dφ/dx = E"
+            : field
+              ? "Field direction: N → P"
+              : "Metallurgical junction: x = 0"}
+        </span>
+        <span>N region</span>
+      </div>
+    </article>
+  );
+}
+function Bands({ s }: { s: LessonSolution }) {
+  const eg = 1.12,
+    ecLeft = (eg + ABRUPT_VBI) / 2;
+  const y = (e: number) => 30 + ((1.3 - e) / 12.8) * 128;
+  const band = (offset: number) =>
+    sample((x) => ecLeft - lessonPotential(x, s) + offset, y, s);
+  return (
+    <article className="profile-card band-card" data-profile="bands">
+      <div className="card-heading">
+        <h2>Energy bands</h2>
+        <span>Energy · eV</span>
+      </div>
+      <svg
+        viewBox="0 0 380 194"
+        role="img"
+        aria-label="Conduction and valence bands bend downward toward N. P-side Fermi level is above N-side by q times reverse voltage."
+      >
+        <g className="graph-grid">
+          {[-1, 0, 1].map((x) => (
+            <path key={x} d={`M${px(x * 1e-6)},24 V158`} />
+          ))}
+          {[42, 98, 158].map((v) => (
+            <path key={v} d={`M44,${v} H352`} />
+          ))}
+        </g>
+        <path d={band(0)} className="profile-line" />
+        <path d={band(-eg)} className="profile-line" />
+        <path
+          d={`M44,${y(0)} H${px(-s.half)} M${px(s.half)},${y(-s.reverseVoltageV)} H352`}
+          className="fermi-line"
+        />
+        <g className="band-labels">
+          <text x="10" y={y(ecLeft) + 3}>
+            E꜀
+          </text>
+          <text x="10" y={y(ecLeft - eg) + 5}>
+            Eᵥ
+          </text>
+          <text x="62" y={y(0) - 7}>
+            Eꜰᴘ
+          </text>
+          <text x="305" y={y(-s.reverseVoltageV) + 14}>
+            Eꜰɴ
+          </text>
+        </g>
+        <g className="graph-ticks">
+          <text x="5" y="28">
+            +1.3
+          </text>
+          <text x="4" y="162">
+            −11.5
+          </text>
+          {[-1, 0, 1].map((v) => (
+            <text key={v} x={px(v * 1e-6)} y="180" textAnchor="middle">
+              {v === 1 ? "+1" : v === -1 ? "−1" : "0"}
+            </text>
+          ))}
+          <text x="372" y="180" textAnchor="end">
+            µm
+          </text>
+        </g>
+      </svg>
+      <div className="card-caption">
+        <span>Eꜰᴘ reference: 0 eV</span>
+        <span>
+          <Variable name="EFp">
+            E<sub>Fp</sub>
+          </Variable>{" "}
+          −{" "}
+          <Variable name="EFn">
+            E<sub>Fn</sub>
+          </Variable>{" "}
+          = {s.reverseVoltageV.toFixed(2)} eV
+        </span>
+      </div>
+    </article>
+  );
+}
+function Breakdown({ mechanism }: { mechanism: "avalanche" | "zener" }) {
+  const avalanche = mechanism === "avalanche";
+  const { playing } = usePresentation();
+  return (
+    <article className="profile-card breakdown-card">
+      <div className="card-heading">
+        <h2>{avalanche ? "Impact ionization" : "Band-to-band tunneling"}</h2>
+        <span>Schematic · not to scale</span>
+      </div>
+      <svg
+        style={{ animationPlayState: playing ? "running" : "paused" }}
+        viewBox="0 0 760 210"
+        role="img"
+        aria-label={
+          avalanche
+            ? "An energetic electron creates an electron–hole pair, producing carrier multiplication."
+            : "An electron tunnels from the P-side valence band into the N-side conduction band through a narrow barrier."
+        }
+      >
+        <defs>
+          <marker
+            id="mechanism-arrow"
+            markerWidth="7"
+            markerHeight="7"
+            refX="6"
+            refY="3"
+            orient="auto"
+          >
+            <path d="M0 0 L6 3 L0 6" fill="none" stroke="#fff" />
+          </marker>
+        </defs>
+        {avalanche ? (
+          <g>
+            <rect
+              x="230"
+              y="20"
+              width="330"
+              height="160"
+              rx="12"
+              fill="#ffffff08"
+              stroke="#555"
+              strokeDasharray="4 5"
+            />
+            <g stroke="#bbb" fill="none" markerEnd="url(#mechanism-arrow)">
+              <path d="M90 100 H320" />
+              <path d="M330 100 L480 52 L650 28" />
+              <path d="M330 100 L485 130 L650 170" />
+              <path d="M325 105 L265 155" />
+            </g>
+            <g fill="#ddd">
+              <circle
+                className="multiplication-electron"
+                cx="160"
+                cy="100"
+                r="7"
+              />
+              <circle cx="330" cy="100" r="8" />
+              <circle cx="485" cy="52" r="6" />
+              <circle cx="485" cy="130" r="6" />
+            </g>
+            <circle cx="265" cy="155" r="7" stroke="#eee" fill="#222" />
+            <g className="mechanism-labels">
+              <text x="70" y="78">
+                Energetic electron
+              </text>
+              <text x="310" y="84">
+                Collision
+              </text>
+              <text x="405" y="194">
+                New electron–hole pairs
+              </text>
+              <text x="580" y="98">
+                Multiplication →
+              </text>
+            </g>
+          </g>
+        ) : (
+          <g>
+            <g fill="none" stroke="#eee" strokeWidth="2">
+              <path d="M65 34 H280 Q330 34 350 85 T420 135 H690" />
+              <path d="M65 85 H280 Q330 85 350 136 T420 186 H690" />
+            </g>
+            <path
+              d="M295 88 L405 132"
+              stroke="#eee"
+              strokeWidth="2"
+              strokeDasharray="4 4"
+              markerEnd="url(#mechanism-arrow)"
+            />
+            <circle
+              className="tunneling-electron"
+              cx="295"
+              cy="88"
+              r="6"
+              fill="#fff"
+            />
+            <g className="mechanism-labels">
+              <text x="65" y="22">
+                P · E꜀
+              </text>
+              <text x="65" y="112">
+                Eᵥ · occupied states
+              </text>
+              <text x="510" y="122">
+                E꜀ · available states
+              </text>
+              <text x="510" y="207">
+                N · Eᵥ
+              </text>
+              <text x="307" y="60">
+                Narrow barrier
+              </text>
+            </g>
+          </g>
+        )}
+      </svg>
+      <div className="card-caption">
+        <span>
+          {avalanche
+            ? "Electrons accelerate toward N; holes toward P."
+            : "Tunneling connects P-side valence states to N-side conduction states."}
+        </span>
+      </div>
+    </article>
+  );
+}
+export function LessonPanel({
+  stage,
+  bias,
+  voltage,
+  onVoltage,
+  onBias,
+  mechanism,
+  onMechanism,
+}: {
+  stage: number;
+  bias: BiasMode;
+  voltage: number;
+  onVoltage: (v: number) => void;
+  onBias: (v: BiasMode) => void;
+  mechanism: "avalanche" | "zener";
+  onMechanism: (v: "avalanche" | "zener") => void;
+}) {
+  const frame = usePresentation();
+  const [reference, setReference] = useState(false);
+  const [details, setDetails] = useState(false);
+  const kind = stage === 3 ? "graded" : "abrupt";
+  const s = solveLesson(
+    kind,
+    stage === 1 && bias === "forward" ? -frame.voltage : frame.voltage,
+  );
+  const breakdown = stage === 2;
+  return (
+    <>
+      <motion.section
+        className="lesson-copy"
+        key={stage}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: frame.reducedMotion ? 0 : 0.3 }}
+        aria-labelledby="page-title"
+      >
+        <span className="lesson-eyebrow">
+          {String(stage + 1).padStart(2, "0")} / {chapters[stage].label}
+        </span>
+        <h1 id="page-title">{chapters[stage].title}</h1>
+        <p className="lesson-theory">
+          {stage === 1 && bias === "forward"
+            ? "Forward bias lowers the barrier and narrows depletion. This 0.40 V comparison uses the depletion approximation; carrier injection and forward current are outside this model."
+            : chapters[stage].theory}
+        </p>
+        {stage === 1 && (
+          <div className="bias-control" role="group" aria-label="Bias polarity">
+            {(["reverse", "forward"] as const).map((b) => (
+              <button
+                key={b}
+                aria-pressed={bias === b}
+                onClick={() => onBias(b)}
+              >
+                {b === "reverse" ? "Reverse bias" : "Forward bias"}
+              </button>
+            ))}
+          </div>
+        )}
+        {breakdown ? (
+          <div
+            className="bias-control"
+            role="group"
+            aria-label="Breakdown mechanism"
+          >
+            {(["avalanche", "zener"] as const).map((m) => (
+              <button
+                key={m}
+                aria-pressed={mechanism === m}
+                onClick={() => onMechanism(m)}
+              >
+                {m === "avalanche" ? "Avalanche" : "Zener tunneling"}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="lesson-equation">
+            <Variable name="W" /> {stage === 3 ? "∝ ∛(" : "∝ √("}
+            <Variable name="Vbi">
+              V<sub>bi</sub>
+            </Variable>{" "}
+            +{" "}
+            <Variable name="VR">
+              V<sub>R</sub>
+            </Variable>
+            )
+            <span className="equation-divider" />
+            {stage === 3 ? (
+              <>
+                <Variable name="rho">ρ(x)</Variable>
+                <span> = </span>
+                <Variable name="q" />
+                <Variable name="a" />
+                <Variable name="x" />
+              </>
+            ) : (
+              <>
+                <Variable name="NA">
+                  N<sub>A</sub>
+                </Variable>{" "}
+                ={" "}
+                <Variable name="ND">
+                  N<sub>D</sub>
+                </Variable>
+              </>
+            )}
+          </div>
+        )}
+        {stage === 3 && (
+          <p className="graded-comparison">
+            Abrupt: square-root growth · Graded: cube-root growth
+          </p>
+        )}
+        {((stage === 1 && bias === "reverse") || stage === 3) && (
+          <div className="voltage-control">
+            <div>
+              <label htmlFor="voltage">Reverse voltage</label>
+              <output htmlFor="voltage">
+                {frame.voltage.toFixed(2)} <span>V</span>
+              </output>
+            </div>
+            <input
+              id="voltage"
+              type="range"
+              min="0"
+              max="10"
+              step=".1"
+              value={voltage}
+              onChange={(e) => onVoltage(Number(e.target.value))}
+              aria-valuetext={`${voltage.toFixed(1)} volts reverse bias`}
+            />
+            <div className="range-ends">
+              <span>0 V · equilibrium</span>
+              <span>10 V</span>
+            </div>
+          </div>
+        )}
+        <button
+          className="model-info-button"
+          aria-expanded={details}
+          aria-controls="model-details"
+          onClick={() => setDetails(!details)}
+        >
+          Model & sources {details ? "−" : "+"}
+        </button>
+      </motion.section>
+      <div className="scene-summary" aria-label="Model state">
+        {breakdown ? (
+          <>
+            <span>Mechanism illustration</span>
+            <strong>
+              {mechanism === "avalanche"
+                ? "Carrier multiplication"
+                : "Heavily doped · narrow barrier"}
+            </strong>
+          </>
+        ) : (
+          <>
+            <span>
+              {kind === "graded"
+                ? "Symmetric graded doping"
+                : "Equal doping · abrupt junction"}
+              {stage === 1
+                ? bias === "forward"
+                  ? " · P + / N −"
+                  : " · P − / N +"
+                : ""}
+            </span>
+            <div className="lesson-metrics">
+              <span>
+                <Variable name="W" />
+                <strong data-metric="width">
+                  {(s.widthM * 1e6).toFixed(3)} <small>µm</small>
+                </strong>
+              </span>
+              <span>
+                <Variable name="Emax">
+                  |E<sub>max</sub>|
+                </Variable>
+                <strong data-metric="field">
+                  {(s.peakFieldVM / 1e6).toFixed(2)} <small>MV/m</small>
+                </strong>
+              </span>
+              <span>
+                <Variable name="Vbi">
+                  V<sub>bi</sub>
+                </Variable>{" "}
+                +{" "}
+                <Variable name="VR">
+                  V<sub>R</sub>
+                </Variable>
+                <strong>
+                  {s.potentialV.toFixed(2)} <small>V</small>
+                </strong>
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+      <section
+        className={`lesson-dashboard ${breakdown ? "is-breakdown" : ""}`}
+        aria-label="Scientific visualizations"
+        data-kind={kind}
+        data-voltage={s.reverseVoltageV}
+        data-width={s.widthM}
+        data-field={s.peakFieldVM}
+      >
+        <div className="dashboard-caption">
+          <span>
+            {breakdown
+              ? "Beyond the pre-breakdown depletion model"
+              : "Spatial profiles · fixed axes · dashed lines mark depletion edges"}
+          </span>
+          {!breakdown && (
+            <label>
+              <input
+                type="checkbox"
+                checked={reference}
+                onChange={(e) => setReference(e.target.checked)}
+              />{" "}
+              Equilibrium reference
+            </label>
+          )}
+        </div>
+        <div className={`profile-grid ${stage === 0 ? "two-profiles" : ""}`}>
+          {breakdown ? (
+            <>
+              <Breakdown mechanism={mechanism} />
+              <article className="mechanism-note">
+                <span className="lesson-eyebrow">
+                  {mechanism === "avalanche" ? "01 / Avalanche" : "02 / Zener"}
+                </span>
+                <h2>
+                  {mechanism === "avalanche"
+                    ? "One carrier becomes many."
+                    : "A narrow barrier permits tunneling."}
+                </h2>
+                <p>
+                  {mechanism === "avalanche"
+                    ? "Impact ionization generates new electron–hole pairs. These carriers can gain enough energy to generate further pairs."
+                    : "Heavy doping makes depletion narrow. Strong band bending allows electrons to tunnel between bands."}
+                </p>
+                <span className="mechanism-limit">
+                  Reverse current rises sharply. The threshold depends on the
+                  device; these animations do not calculate breakdown voltage.
+                </span>
+              </article>
+            </>
+          ) : (
+            <>
+              <Profile type="charge" s={s} reference={reference} />
+              <Profile type="field" s={s} reference={reference} />
+              {stage === 1 && <Bands s={s} />}{" "}
+              {stage === 3 && (
+                <Profile type="potential" s={s} reference={reference} />
+              )}
+            </>
+          )}
+        </div>
+      </section>
+      {details && (
+        <aside
+          id="model-details"
+          className="model-details"
+          aria-label="Model assumptions and sources"
+        >
+          <button
+            aria-label="Close model details"
+            onClick={() => setDetails(false)}
+          >
+            Close ×
+          </button>
+          <h2>Model & sources</h2>
+          <p>
+            Silicon, 300 K; complete ionization and nondegenerate doping.
+            One-dimensional depletion approximation. Position increases from P
+            to N; E = −dφ/dx. Geometry and carrier motion are schematic.
+          </p>
+          <p>
+            Abrupt presentation: Nₐ = Nᴅ = 10¹⁶ cm⁻³; nᵢ = 1.5 × 10¹⁰ cm⁻³; Vᵦᵢ
+            = {ABRUPT_VBI.toFixed(3)} V. The 0–10 V slider describes
+            pre-breakdown electrostatics. Forward comparison: 0.40 V.
+          </p>
+          <p>
+            Graded presentation: a = 10²⁰ cm⁻⁴. Equilibrium Vᵦᵢ ={" "}
+            {GRADED_VBI.toFixed(3)} V is solved from textbook Eqs. 7.67 and
+            7.70, then held fixed during bias. The zero neutral-region field is
+            an approximation. Junction types use distinct doping profiles; their
+            absolute widths are not a controlled comparison.
+          </p>
+          <p>
+            Band diagram: Eɡ = 1.12 eV, Eꜰᴘ = 0 eV; Eꜰɴ = −qVᴿ. Dashed levels
+            are shown only in the neutral regions. Full transport and
+            quasi-Fermi profiles are not solved. The laboratory retains its
+            separately documented asymmetric junction.
+          </p>
+          <p>
+            Sources: PNJunctionInfoPart1.pdf, printed pp. 242–249 (equilibrium),
+            251–253 (reverse bias; Fig. 7.7). PNJunctionInfoPart2.pdf, pp.
+            258–262 (breakdown; Fig. 7.12), 263–264 (graded junction; Eqs.
+            7.62–7.71).
+          </p>
+        </aside>
+      )}
+    </>
+  );
+}

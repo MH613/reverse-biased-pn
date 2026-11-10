@@ -14,6 +14,7 @@ import {
   SkipForward,
   X,
 } from "lucide-react";
+import { LessonPanel } from "./presentation/LessonPanel";
 import { Junction } from "./components/Junction";
 import {
   Laboratory,
@@ -24,12 +25,14 @@ import {
   type BiasMode,
   PresentationContext,
   chapters,
+  depletionWidth,
 } from "./state/presentation";
 import { usePresentationMotion } from "./hooks/usePresentationMotion";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-600.css";
 import "./style.css";
+import "./presentation/presentation.css";
 import { motionTiming, easeOut } from "./motion";
 
 const inspection: Record<string, string> = {
@@ -42,6 +45,9 @@ function App() {
   const [view, setView] = useState(-1),
     [playing, setPlaying] = useState(true),
     [bias, setBias] = useState<BiasMode>("reverse");
+  const [mechanism, setMechanism] = useState<"avalanche" | "zener">(
+    "avalanche",
+  );
   const [manualVoltage, setManualVoltage] = useState<number | null>(null),
     [selected, setSelected] = useState<string | null>(null);
   const [labLeaving, setLabLeaving] = useState(false);
@@ -51,14 +57,14 @@ function App() {
   const [reducedMotion, setReducedMotion] = useState(
     () => matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
-  const [direction, setDirection] = useState(1);
   const [viewport, setViewport] = useState({
     width: innerWidth,
     height: innerHeight,
   });
   const compact = viewport.width < 760;
   useEffect(() => {
-    const resize = () => setViewport({ width: innerWidth, height: innerHeight });
+    const resize = () =>
+      setViewport({ width: innerWidth, height: innerHeight });
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
   }, []);
@@ -78,13 +84,13 @@ function App() {
     (next: number) => {
       const target = Math.max(-1, Math.min(3, next));
       if (target === view) return;
-      setDirection(target > view ? 1 : -1);
       setView(target);
       reset();
       setPlaying(true);
       setSelected(null);
       setManualVoltage(null);
       setBias("reverse");
+      window.scrollTo({ top: 0 });
     },
     [view, reset],
   );
@@ -104,7 +110,7 @@ function App() {
         labOpen ||
         labLeaving ||
         (e.target as HTMLElement).closest(
-          'input,textarea,select,[contenteditable="true"]',
+          'input,textarea,select,[contenteditable="true"],[role="tooltip"],.model-details',
         )
       )
         return;
@@ -133,7 +139,9 @@ function App() {
         labOpen ||
         labLeaving ||
         e.ctrlKey ||
-        (e.target as HTMLElement).closest('input,[role="dialog"]')
+        (e.target as HTMLElement).closest(
+          'input,[role="dialog"],.model-details',
+        )
       )
         return;
       // Small screens scroll naturally; presentation-size screens move by chapter.
@@ -197,8 +205,8 @@ function App() {
     setLabLeaving(true);
     setLabOpen(false);
   }, []);
-  const handleVoltage = (e: React.FormEvent<HTMLInputElement>) => {
-    setManualVoltage(Number(e.currentTarget.value));
+  const handleVoltage = (voltage: number) => {
+    setManualVoltage(voltage);
     setPlaying(true);
   };
   const changeBias = (next: BiasMode) => {
@@ -208,25 +216,19 @@ function App() {
   };
   // Keep a clear vertical band between the overview copy and discovery controls.
   // Short screens retain the scrollable layout's minimum usable height.
-  const homeSceneWidth = Math.min(viewport.width * (compact ? 1.12 : 0.75), 1280);
+  const homeSceneWidth = Math.min(
+    viewport.width * (compact ? 1.12 : 0.75),
+    1280,
+  );
   const homeFigureHeight =
     Math.max(viewport.height, compact ? 820 : 640) - (compact ? 410 : 390);
-  const homeScale = 0.96 * Math.min(1, homeFigureHeight / (homeSceneWidth * 0.42));
+  const homeScale =
+    0.96 * Math.min(1, homeFigureHeight / (homeSceneWidth * 0.42));
   const camera = {
-    x: home || compact ? "0vw" : "18vw",
-    y: home
-      ? "3vh"
-      : compact
-        ? "5vh"
-        : `${stage >= 2 ? -5 : [-1, -2][stage]}vh`,
-    scale: home
-      ? homeScale
-      : compact
-        ? stage >= 2
-          ? 0.98
-          : 1.12
-        : [1.02, 1.07, 0.96, 1][stage],
-    rotate: home ? 0 : [-1, 1.5, -1.5, 0][stage],
+    x: "0vw",
+    y: "0vh",
+    scale: home ? homeScale : 0.95,
+    rotate: home ? 0 : -1,
   };
   return (
     <MotionConfig reducedMotion="user">
@@ -234,9 +236,17 @@ function App() {
         value={{
           stage,
           ...frame,
+          width:
+            stage === 2 && !home
+              ? mechanism === "zener"
+                ? 35
+                : 160
+              : depletionWidth(stage, frame.progress, frame.voltage, bias),
           playing: playing && !labOpen,
           bias,
           reducedMotion,
+          lesson: true,
+          breakdown: stage === 2 ? mechanism : undefined,
         }}
       >
         <motion.div
@@ -292,7 +302,12 @@ function App() {
           <main
             className="presentation"
             onTouchStart={(e) => {
-              if ((e.target as HTMLElement).closest("input,button,a")) return;
+              if (
+                (e.target as HTMLElement).closest(
+                  "input,button,a,.lesson-dashboard,.model-details",
+                )
+              )
+                return;
               touchStart.current = {
                 x: e.touches[0].clientX,
                 y: e.touches[0].clientY,
@@ -326,95 +341,42 @@ function App() {
                   showIons
                   selected={selected}
                   onSelect={setSelected}
+                  showCircuit={!home && (stage === 1 || stage === 3)}
                 />
               </motion.div>
             </div>
-            <AnimatePresence mode="wait" custom={direction} initial={false}>
+            {home ? (
               <motion.section
-                className={home ? "intro-copy" : "chapter-copy"}
-                key={view}
-                custom={direction}
-                initial={
-                  reducedMotion
-                    ? { opacity: 0 }
-                    : { opacity: 0, y: direction * 28, filter: "blur(3px)" }
-                }
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                exit={
-                  reducedMotion
-                    ? { opacity: 0 }
-                    : { opacity: 0, y: -direction * 24, filter: "blur(3px)" }
-                }
-                transition={{
-                  duration: reducedMotion ? 0.1 : 0.36,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
+                className="intro-copy"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 aria-labelledby="page-title"
               >
+                <span className="lesson-eyebrow">
+                  PN junction / Reverse bias
+                </span>
                 <h1 id="page-title">
-                  {home ? (
-                    <>The PN junction.</>
-                  ) : (
-                    chapters[stage].title.split("\n").map((line, i) => (
-                      <React.Fragment key={line}>
-                        {i > 0 && <br />}
-                        {line}
-                      </React.Fragment>
-                    ))
-                  )}
+                  Effect of Reverse Bias on the
+                  <br className="desktop-break" /> Depletion Width and
+                  Electric-Field Profile
+                  <br className="desktop-break" /> of a PN Junction
                 </h1>
                 <p className="theory">
-                  {home
-                    ? "The invisible physics of semiconductors, one moment at a time."
-                    : chapters[stage].theory}
+                  An interactive study of depletion, electric fields, and
+                  junction breakdown.
                 </p>
-                {!home && stage === 2 && (
-                  <div
-                    className="bias-control"
-                    role="group"
-                    aria-label="Bias polarity"
-                  >
-                    <button
-                      aria-pressed={bias === "reverse"}
-                      onClick={() => changeBias("reverse")}
-                    >
-                      Reverse bias
-                    </button>
-                    <button
-                      aria-pressed={bias === "forward"}
-                      onClick={() => changeBias("forward")}
-                    >
-                      Forward bias
-                    </button>
-                  </div>
-                )}
-                {!home && stage === 3 && (
-                  <div className="voltage-control">
-                    <div>
-                      <label htmlFor="voltage">Reverse voltage</label>
-                      <output htmlFor="voltage">
-                        {frame.voltage.toFixed(2)} <span>V</span>
-                      </output>
-                    </div>
-                    <input
-                      id="voltage"
-                      type="range"
-                      min="0"
-                      max="10"
-                      step=".1"
-                      value={manualVoltage ?? frame.voltage}
-                      onChange={handleVoltage}
-                      onInput={handleVoltage}
-                      aria-valuetext={`${frame.voltage.toFixed(2)} volts reverse bias`}
-                    />
-                    <div className="range-ends">
-                      <span>0 V</span>
-                      <span>10 V</span>
-                    </div>
-                  </div>
-                )}
               </motion.section>
-            </AnimatePresence>
+            ) : (
+              <LessonPanel
+                stage={stage}
+                bias={bias}
+                voltage={manualVoltage ?? 0}
+                onVoltage={handleVoltage}
+                onBias={changeBias}
+                mechanism={mechanism}
+                onMechanism={setMechanism}
+              />
+            )}
             <AnimatePresence>
               {selected && !home && (
                 <motion.aside
@@ -436,9 +398,9 @@ function App() {
             {home && (
               <motion.div
                 className="begin-position"
-                initial={{ opacity: 0 }}
+                initial={reducedMotion ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: reducedMotion ? 0 : 0.4, duration: 0.35 }}
               >
                 <button className="primary-button" onClick={() => go(0)}>
                   Explore the junction <ArrowRight size={17} />
@@ -452,7 +414,7 @@ function App() {
           <footer className="footer">
             <div className="footer-left">
               {home ? (
-                <span>A closer look at how things work.</span>
+                <span>Depletion approximation · Silicon · 300 K</span>
               ) : (
                 <>
                   <button
@@ -553,7 +515,7 @@ function App() {
                 </div>
               </>
             ) : (
-              <span>Made for the curious.</span>
+              <span>Charge → field → potential</span>
             )}
           </footer>
           {fullError && (
