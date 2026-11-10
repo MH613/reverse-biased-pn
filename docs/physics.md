@@ -89,7 +89,7 @@ Vbi = 0.732236392752 V. Tests also sweep 1,000 intermediate voltages for monoton
 
 ## Revised presentation models
 
-The presentation is now distinct from the asymmetric laboratory model described above. `src/physics/lesson.ts` uses the supplied PNJunctionInfoPart1.pdf (printed pp. 242–253) and PNJunctionInfoPart2.pdf (pp. 258–264). These source documents are user-provided reference material and are not redistributed in this repository.
+The presentation is now distinct from the asymmetric laboratory model described above. `src/physics/lesson.ts` follows Donald A. Neamen, *Semiconductor Physics and Devices: Basic Principles*, Fourth Edition, Chapter 7. The supplied PNJunctionInfoPart1.pdf (printed pp. 242–253) and PNJunctionInfoPart2.pdf (pp. 258–264) are excerpts from that textbook. These source documents are user-provided reference material and are not redistributed in this repository.
 
 All calculations use SI. Silicon is at 300 K with relative permittivity 11.7, complete ionization, and nondegenerate doping. The presentation uses intrinsic density 1.5 × 10^16 m^-3, matching the textbook examples. The abrupt presentation has NA = ND = 10^22 m^-3. The laboratory's original parameter set is unchanged.
 
@@ -120,3 +120,9 @@ Avalanche multiplication and Zener tunneling follow Fig. 7.12. Separate schemati
 ### Verification
 
 `tests/lesson-physics.spec.ts` checks both models against Poisson's equation, integrated voltage drop, charge neutrality, boundary conditions, potential symmetry, expected voltage exponents, and the graded equilibrium relation. Presentation browser tests check intermediate-frame coherence, geometry, bands, sliders, reduced motion, source details, tooltips, and layout. Existing laboratory physics and interaction tests remain in the suite.
+
+### Presentation refinements
+
+Equilibrium graphs use fixed spatial limits of ±0.3 µm and a signed field scale from 0 to -4 MV/m, exposing the shape at zero bias. The bias and graded profiles retain ±1.2 µm and 0 to -15 MV/m scales throughout each voltage sweep. Full displayed equations match the existing SI solutions; the graded peak relation is |Emax| = 3(Vbi + VR)/(2W).
+
+Zener tunneling is horizontal in the energy diagram, connecting the P-side valence band to the N-side conduction band at the same energy. The tall, narrow barrier is schematic. Avalanche shows a conduction electron liberating a bound electron and leaving a hole: two conduction electrons can accelerate to cause further ionization. A repeated three-generation sequence produces 1, 2, 4, then 8 conduction electrons; holes drift toward P. This is an explanatory animation, not a quantitative multiplication or breakdown model. Pause freezes the sequence; reduced motion shows a static cascade.

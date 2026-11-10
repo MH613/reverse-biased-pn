@@ -43,7 +43,7 @@ test('lab opens from every stage, contains keyboard focus, and restores the pres
   await page.getByRole('button', { name: 'Explore the junction', exact: true }).click();
   for (let i = 0; i < 4; i++) {
     await page.locator('.stage-track button').nth(i).click();
-    const title = ['The equilibrium junction', 'Reverse bias: wider, stronger', 'When reverse bias reaches its limit', 'A linearly graded junction'][i];
+    const title = ['The equilibrium junction', 'Reverse bias', 'When reverse bias reaches its limit', 'A linearly graded junction'][i];
     await expect(page.locator('h1')).toContainText(title);
     if (i === 1) await page.getByRole('button', { name: 'Forward bias', exact: true }).click();
     await page.getByRole('button', { name: 'Laboratory', exact: true }).click();

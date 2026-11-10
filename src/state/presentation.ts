@@ -47,7 +47,7 @@ export const chapters = [
       "Fixed ions create an internal field—even at zero applied voltage. Equal doping gives equal depletion widths on the P and N sides. Outside depletion, the ideal model sets the field to zero.",
   },
   {
-    title: "Reverse bias: wider, stronger",
+    title: "Reverse bias",
     label: "Applying bias",
     theory:
       "Reverse bias increases the potential barrier. More fixed ions are exposed as depletion widens, increasing the peak field. The ion density stays constant; the charged region becomes wider.",

@@ -1,3 +1,4 @@
+import { Avalanche } from "../presentation/Avalanche";
 import { useId, useState } from "react";
 import { usePresentation } from "../state/presentation";
 import { useSimulation } from "../physics/SimulationContext";
@@ -459,30 +460,11 @@ export function Junction({
           }}
         >
           {presentation.breakdown === "avalanche" ? (
-            [0, 1, 2, 3, 4, 5].map((i) => {
-              const p = project(
-                left + 20 + (i % 3) * 45,
-                32 + Math.floor(i / 3) * 70,
-                72,
-              );
-              return (
-                <circle
-                  key={i}
-                  className="avalanche-carrier"
-                  cx={p[0]}
-                  cy={p[1]}
-                  r="4"
-                  fill={i % 2 ? "#fff" : "#333"}
-                  stroke="#555"
-                  style={{
-                    animationDelay: `-${i * 0.3}s`,
-                    animationPlayState: presentation.playing
-                      ? "running"
-                      : "paused",
-                  }}
-                />
-              );
-            })
+            <Avalanche
+              map={([x, y]) =>
+                project(left + x * (right - left), 12 + y * 146, 74)
+              }
+            />
           ) : (
             <path
               d={`M${project(left - 14, 85, 72)} L${project(right + 14, 85, 72)}`}

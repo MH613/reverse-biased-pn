@@ -62,6 +62,7 @@ function App() {
     height: innerHeight,
   });
   const compact = viewport.width < 760;
+  const wide = viewport.width >= 1440 && viewport.height >= 720;
   useEffect(() => {
     const resize = () =>
       setViewport({ width: innerWidth, height: innerHeight });
@@ -145,7 +146,12 @@ function App() {
       )
         return;
       // Small screens scroll naturally; presentation-size screens move by chapter.
-      if (innerWidth < 760 || innerHeight < 640) return;
+      if (
+        innerWidth < 760 ||
+        innerHeight < 640 ||
+        document.documentElement.scrollHeight > innerHeight + 1
+      )
+        return;
       e.preventDefault();
       const now = performance.now();
       if (now < navigationLock.current) return;
@@ -301,6 +307,8 @@ function App() {
           </p>
           <main
             className="presentation"
+            data-stage={home ? "intro" : stage}
+            data-wide={wide}
             onTouchStart={(e) => {
               if (
                 (e.target as HTMLElement).closest(
@@ -368,6 +376,7 @@ function App() {
               </motion.section>
             ) : (
               <LessonPanel
+                wide={wide}
                 stage={stage}
                 bias={bias}
                 voltage={manualVoltage ?? 0}

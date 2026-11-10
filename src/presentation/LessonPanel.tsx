@@ -1,4 +1,7 @@
-import { useId, useState, type ReactNode } from "react";
+import { useId, useState } from "react";
+import { Variable } from "./Variable";
+import { Avalanche } from "./Avalanche";
+import { Equations } from "./Equations";
 import { motion } from "motion/react";
 import {
   chapters,
@@ -15,69 +18,18 @@ import {
   GRADED_VBI,
 } from "../physics/lesson";
 
-const definitions: Record<string, string> = {
-  rho: "Volume charge density, in C/m³. In the graded model, ρ(x) = qax within depletion.",
-  EFp: "P-side neutral-region Fermi level, used as the zero energy reference.",
-  EFn: "N-side neutral-region Fermi level. Under reverse bias it lies qVR below the P-side level.",
-  W: "Total depletion width, measured in micrometres (µm).",
-  Vbi: "Built-in potential at thermal equilibrium, in volts. It stays fixed as applied bias changes.",
-  VR: "Applied reverse-voltage magnitude, in volts. P is negative relative to N.",
-  Emax: "Greatest electric-field magnitude, at the metallurgical junction, in V/m.",
-  NA: "Net acceptor concentration in the P region, in m⁻³.",
-  ND: "Net donor concentration in the N region, in m⁻³.",
-  a: "Gradient of net doping concentration: 10²⁸ m⁻⁴ (10²⁰ cm⁻⁴).",
-  q: "Positive elementary charge: 1.602176634 × 10⁻¹⁹ coulombs.",
-  x: "Position from the metallurgical junction; positive toward N.",
-};
-export function Variable({
-  name,
-  children,
-}: {
-  name: string;
-  children?: ReactNode;
-}) {
-  const id = useId();
-  const [open, setOpen] = useState(false);
-  return (
-    <span
-      className={`variable ${open ? "is-open" : ""}`}
-      onPointerEnter={(e) => {
-        if (e.pointerType === "mouse") setOpen(true);
-      }}
-      onPointerLeave={(e) => {
-        if (e.pointerType === "mouse") setOpen(false);
-      }}
-    >
-      <button
-        type="button"
-        aria-label={`Define ${name}`}
-        aria-describedby={id}
-        aria-expanded={open}
-        onClick={() => setOpen(true)}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setOpen(false)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") setOpen(false);
-        }}
-      >
-        {children ?? name}
-      </button>
-      <span className="variable-tooltip" role="tooltip" id={id}>
-        {definitions[name]}
-      </span>
-    </span>
-  );
-}
 const XMAX = 1.2e-6;
 const px = (x: number) => 44 + ((x + XMAX) / (2 * XMAX)) * 308;
 const sample = (
   f: (x: number) => number,
   y: (v: number) => number,
   s: LessonSolution,
+  xmax = XMAX,
 ) => {
+  const px = (x: number) => 44 + ((x + xmax) / (2 * xmax)) * 308;
   // Include physical boundaries exactly, including the junction apex.
   const xs = [
-    ...Array.from({ length: 181 }, (_, i) => -XMAX + (i / 180) * 2 * XMAX),
+    ...Array.from({ length: 181 }, (_, i) => -xmax + (i / 180) * 2 * xmax),
     -s.half,
     0,
     s.half,
@@ -90,10 +42,12 @@ function Profile({
   type,
   s,
   reference,
+  zoom = false,
 }: {
   type: "charge" | "field" | "potential";
   s: LessonSolution;
   reference: boolean;
+  zoom?: boolean;
 }) {
   const id = useId().replace(/:/g, "");
   const { progress, reducedMotion } = usePresentation();
@@ -104,7 +58,10 @@ function Profile({
     : potential
       ? "Electrostatic potential"
       : "Space charge";
-  const max = field ? 1.5e7 : potential ? 11 : 2100;
+  const xmax = zoom ? 0.3e-6 : XMAX;
+  const px = (x: number) => 44 + ((x + xmax) / (2 * xmax)) * 308;
+  const ticks = zoom ? [-0.2, 0, 0.2] : [-1, 0, 1];
+  const max = field ? (zoom ? 4e6 : 1.5e7) : potential ? 11 : 2100;
   const y = (v: number) =>
     potential
       ? 158 - (v / max) * 124
@@ -117,14 +74,14 @@ function Profile({
       const b = sol.half,
         r = lessonCharge(b / 2, sol);
       return [
-        [-XMAX, 0],
+        [-xmax, 0],
         [-b, 0],
         [-b, -r],
         [0, -r],
         [0, r],
         [b, r],
         [b, 0],
-        [XMAX, 0],
+        [xmax, 0],
       ]
         .map(([x, v], i) => `${i ? "L" : "M"}${px(x)},${y(v)}`)
         .join(" ");
@@ -133,22 +90,26 @@ function Profile({
       const b = sol.half,
         r = lessonCharge(b, sol);
       return [
-        [-XMAX, 0],
+        [-xmax, 0],
         [-b, 0],
         [-b, -r],
         [b, r],
         [b, 0],
-        [XMAX, 0],
+        [xmax, 0],
       ]
         .map(([x, v], i) => `${i ? "L" : "M"}${px(x)},${y(v)}`)
         .join(" ");
     }
-    return sample((x) => f(x, sol), y, sol);
+    return sample((x) => f(x, sol), y, sol, xmax);
   };
   const d = makePath(s),
     eq = solveLesson(s.kind, 0);
   return (
-    <article className="profile-card" data-profile={type}>
+    <article
+      className="profile-card"
+      data-profile={type}
+      data-spatial-range-um={zoom ? "0.6" : "2.4"}
+    >
       <div className="card-heading">
         <h2>{title}</h2>
         <span>
@@ -175,7 +136,7 @@ function Profile({
           </clipPath>
         </defs>
         <g className="graph-grid">
-          {[-1, 0, 1].map((x) => (
+          {ticks.map((x) => (
             <path key={x} d={`M${px(x * 1e-6)},24 V158`} />
           ))}
           {[42, 98, 158].map((v) => (
@@ -188,16 +149,16 @@ function Profile({
             {potential ? "11" : field ? "0" : "+2.1"}
           </text>
           <text x="8" y={potential ? 160 : field ? 160 : 101}>
-            {potential ? "0" : field ? "−15" : "0"}
+            {potential ? "0" : field ? (zoom ? "−4" : "−15") : "0"}
           </text>
           {!field && !potential && (
             <text x="8" y="160">
               −2.1
             </text>
           )}
-          {[-1, 0, 1].map((v) => (
+          {ticks.map((v) => (
             <text key={v} x={px(v * 1e-6)} y="180" textAnchor="middle">
-              {v === 1 ? "+1" : v === -1 ? "−1" : "0"}
+              {v > 0 ? `+${v}` : v < 0 ? `−${Math.abs(v)}` : "0"}
             </text>
           ))}
           <text x="372" y="180" textAnchor="end">
@@ -319,7 +280,7 @@ function Breakdown({ mechanism }: { mechanism: "avalanche" | "zener" }) {
       </div>
       <svg
         style={{ animationPlayState: playing ? "running" : "paused" }}
-        viewBox="0 0 760 210"
+        viewBox="0 0 480 330"
         role="img"
         aria-label={
           avalanche
@@ -342,83 +303,67 @@ function Breakdown({ mechanism }: { mechanism: "avalanche" | "zener" }) {
         {avalanche ? (
           <g>
             <rect
-              x="230"
-              y="20"
-              width="330"
-              height="160"
-              rx="12"
-              fill="#ffffff08"
+              x="28"
+              y="48"
+              width="424"
+              height="224"
+              rx="14"
+              fill="#ffffff05"
               stroke="#555"
               strokeDasharray="4 5"
             />
-            <g stroke="#bbb" fill="none" markerEnd="url(#mechanism-arrow)">
-              <path d="M90 100 H320" />
-              <path d="M330 100 L480 52 L650 28" />
-              <path d="M330 100 L485 130 L650 170" />
-              <path d="M325 105 L265 155" />
-            </g>
-            <g fill="#ddd">
-              <circle
-                className="multiplication-electron"
-                cx="160"
-                cy="100"
-                r="7"
-              />
-              <circle cx="330" cy="100" r="8" />
-              <circle cx="485" cy="52" r="6" />
-              <circle cx="485" cy="130" r="6" />
-            </g>
-            <circle cx="265" cy="155" r="7" stroke="#eee" fill="#222" />
+            <Avalanche map={([x, y]) => [42 + x * 396, 70 + y * 180]} />
             <g className="mechanism-labels">
-              <text x="70" y="78">
-                Energetic electron
+              <text x="42" y="30">
+                Incoming electron
               </text>
-              <text x="310" y="84">
-                Collision
+              <text x="262" y="30">
+                Impact → multiplication
               </text>
-              <text x="405" y="194">
-                New electron–hole pairs
+              <text x="42" y="300">
+                ○ hole
               </text>
-              <text x="580" y="98">
-                Multiplication →
+              <text x="154" y="300">
+                ● conduction electron
               </text>
             </g>
           </g>
         ) : (
           <g>
             <g fill="none" stroke="#eee" strokeWidth="2">
-              <path d="M65 34 H280 Q330 34 350 85 T420 135 H690" />
-              <path d="M65 85 H280 Q330 85 350 136 T420 186 H690" />
+              <path d="M42 34 H192 C218 34 230 226 256 226 H438" />
+              <path d="M42 126 H192 C218 126 230 318 256 318 H438" />
             </g>
             <path
-              d="M295 88 L405 132"
+              className="tunnel-path"
+              d="M215.334 180 H234.519"
               stroke="#eee"
               strokeWidth="2"
-              strokeDasharray="4 4"
+              strokeDasharray="3 3"
               markerEnd="url(#mechanism-arrow)"
             />
             <circle
               className="tunneling-electron"
-              cx="295"
-              cy="88"
-              r="6"
+              cx="215.334"
+              cy="180"
+              r="5"
               fill="#fff"
             />
             <g className="mechanism-labels">
-              <text x="65" y="22">
+              <text x="42" y="30">
                 P · E꜀
               </text>
-              <text x="65" y="112">
-                Eᵥ · occupied states
+              <text x="42" y="112">
+                Eᵥ · occupied
               </text>
-              <text x="510" y="122">
-                E꜀ · available states
+              <text x="284" y="236">
+                E꜀ · available
               </text>
-              <text x="510" y="207">
+              <text x="288" y="322">
                 N · Eᵥ
               </text>
-              <text x="307" y="60">
-                Narrow barrier
+              <text x="250" y="163">
+                Tunneling
               </text>
             </g>
           </g>
@@ -435,6 +380,7 @@ function Breakdown({ mechanism }: { mechanism: "avalanche" | "zener" }) {
   );
 }
 export function LessonPanel({
+  wide,
   stage,
   bias,
   voltage,
@@ -443,6 +389,7 @@ export function LessonPanel({
   mechanism,
   onMechanism,
 }: {
+  wide: boolean;
   stage: number;
   bias: BiasMode;
   voltage: number;
@@ -509,37 +456,7 @@ export function LessonPanel({
             ))}
           </div>
         ) : (
-          <div className="lesson-equation">
-            <Variable name="W" /> {stage === 3 ? "∝ ∛(" : "∝ √("}
-            <Variable name="Vbi">
-              V<sub>bi</sub>
-            </Variable>{" "}
-            +{" "}
-            <Variable name="VR">
-              V<sub>R</sub>
-            </Variable>
-            )
-            <span className="equation-divider" />
-            {stage === 3 ? (
-              <>
-                <Variable name="rho">ρ(x)</Variable>
-                <span> = </span>
-                <Variable name="q" />
-                <Variable name="a" />
-                <Variable name="x" />
-              </>
-            ) : (
-              <>
-                <Variable name="NA">
-                  N<sub>A</sub>
-                </Variable>{" "}
-                ={" "}
-                <Variable name="ND">
-                  N<sub>D</sub>
-                </Variable>
-              </>
-            )}
-          </div>
+          <Equations stage={stage} bias={bias} />
         )}
         {stage === 3 && (
           <p className="graded-comparison">
@@ -578,6 +495,11 @@ export function LessonPanel({
         >
           Model & sources {details ? "−" : "+"}
         </button>
+        {wide && stage === 3 && (
+          <div className="graded-charge">
+            <Profile type="charge" s={s} reference={reference} />
+          </div>
+        )}
       </motion.section>
       <div className="scene-summary" aria-label="Model state">
         {breakdown ? (
@@ -591,16 +513,6 @@ export function LessonPanel({
           </>
         ) : (
           <>
-            <span>
-              {kind === "graded"
-                ? "Symmetric graded doping"
-                : "Equal doping · abrupt junction"}
-              {stage === 1
-                ? bias === "forward"
-                  ? " · P + / N −"
-                  : " · P − / N +"
-                : ""}
-            </span>
             <div className="lesson-metrics">
               <span>
                 <Variable name="W" />
@@ -641,11 +553,6 @@ export function LessonPanel({
         data-field={s.peakFieldVM}
       >
         <div className="dashboard-caption">
-          <span>
-            {breakdown
-              ? "Beyond the pre-breakdown depletion model"
-              : "Spatial profiles · fixed axes · dashed lines mark depletion edges"}
-          </span>
           {!breakdown && (
             <label>
               <input
@@ -667,12 +574,12 @@ export function LessonPanel({
                 </span>
                 <h2>
                   {mechanism === "avalanche"
-                    ? "One carrier becomes many."
+                    ? "One electron releases another."
                     : "A narrow barrier permits tunneling."}
                 </h2>
                 <p>
                   {mechanism === "avalanche"
-                    ? "Impact ionization generates new electron–hole pairs. These carriers can gain enough energy to generate further pairs."
+                    ? "An energetic carrier liberates a bound electron, creating an electron–hole pair. Two conduction electrons can then accelerate and trigger further ionization."
                     : "Heavy doping makes depletion narrow. Strong band bending allows electrons to tunnel between bands."}
                 </p>
                 <span className="mechanism-limit">
@@ -683,8 +590,20 @@ export function LessonPanel({
             </>
           ) : (
             <>
-              <Profile type="charge" s={s} reference={reference} />
-              <Profile type="field" s={s} reference={reference} />
+              {!(wide && stage === 3) && (
+                <Profile
+                  type="charge"
+                  s={s}
+                  reference={reference}
+                  zoom={stage === 0}
+                />
+              )}
+              <Profile
+                type="field"
+                s={s}
+                reference={reference}
+                zoom={stage === 0}
+              />
               {stage === 1 && <Bands s={s} />}{" "}
               {stage === 3 && (
                 <Profile type="potential" s={s} reference={reference} />
@@ -730,10 +649,12 @@ export function LessonPanel({
             separately documented asymmetric junction.
           </p>
           <p>
-            Sources: PNJunctionInfoPart1.pdf, printed pp. 242–249 (equilibrium),
-            251–253 (reverse bias; Fig. 7.7). PNJunctionInfoPart2.pdf, pp.
-            258–262 (breakdown; Fig. 7.12), 263–264 (graded junction; Eqs.
-            7.62–7.71).
+            Source: Donald A. Neamen,{" "}
+            <cite>Semiconductor Physics and Devices: Basic Principles</cite>,
+            Fourth Edition, Chapter 7. Pages 242–249 (equilibrium), 251–253
+            (reverse bias; Fig. 7.7), 258–262 (breakdown; Fig. 7.12), and
+            263–264 (graded junction; Eqs. 7.62–7.71). The supplied PDFs are
+            excerpts from this textbook.
           </p>
         </aside>
       )}

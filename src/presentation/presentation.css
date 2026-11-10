@@ -53,20 +53,6 @@
   margin-top: 16px;
   width: 300px;
 }
-.lesson-equation {
-  display: flex;
-  align-items: baseline;
-  gap: 3px;
-  font-size: 15px;
-  margin-top: 17px;
-  color: #444;
-}
-.equation-divider {
-  align-self: center;
-  height: 16px;
-  border-left: 1px solid #ccc;
-  margin: 0 14px;
-}
 .variable {
   position: relative;
   display: inline-block;
@@ -306,36 +292,8 @@
     sans-serif;
   fill: #ddd;
 }
-.multiplication-electron {
-  animation: impact 2.6s linear infinite;
-}
 .tunneling-electron {
   animation: tunnel 2.6s ease-in-out infinite;
-}
-@keyframes impact {
-  from {
-    transform: translateX(-65px);
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-  }
-  to {
-    transform: translateX(165px);
-    opacity: 0.3;
-  }
-}
-@keyframes tunnel {
-  0%,
-  20% {
-    transform: translate(0, 0);
-    opacity: 1;
-  }
-  75%,
-  100% {
-    transform: translate(110px, 44px);
-    opacity: 0.3;
-  }
 }
 .model-details {
   position: absolute;
@@ -544,33 +502,13 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .multiplication-electron,
   .tunneling-electron,
   .is-home .scene-camera {
     animation: none;
   }
 }
-.avalanche-carrier {
-  animation: avalanche-pulse 1.8s ease-in-out infinite;
-}
-@keyframes avalanche-pulse {
-  0%,
-  100% {
-    opacity: 0.2;
-    translate: -8px 0;
-  }
-  50% {
-    opacity: 1;
-    translate: 8px 0;
-  }
-}
 .breakdown-card svg * {
   animation-play-state: inherit;
-}
-@media (prefers-reduced-motion: reduce) {
-  .avalanche-carrier {
-    animation: none;
-  }
 }
 
 @media (min-width: 760px) and (max-height: 850px) {
@@ -592,10 +530,7 @@
   .lesson-copy .voltage-control {
     margin-top: 12px;
   }
-  .lesson-equation {
-    margin-top: 12px;
-    font-size: 14px;
-  }
+
   .lesson-copy .voltage-control input {
     margin: 16px 0 9px;
   }
@@ -645,4 +580,280 @@ output {
 }
 .band-card {
   overflow: visible;
+}
+/* Full equations use the same Inter text as the presentation. */
+.full-equations {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 22px 0;
+  font-family: inherit;
+  font-size: clamp(18px, 1.55vw, 25px);
+  font-weight: 400;
+  color: #333;
+}
+.display-equation {
+  display: flex;
+  align-items: center;
+  gap: 0.2em;
+  min-width: 0;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.display-equation .variable {
+  line-height: 1.1;
+}
+.math-fraction {
+  display: inline-flex;
+  flex-direction: column;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 0.88em;
+  margin: 0 0.12em;
+}
+.math-fraction > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  padding: 0.12em 0.12em;
+  gap: 0.06em;
+}
+.math-fraction > span + span {
+  border-top: 1px solid currentColor;
+}
+.math-root {
+  display: inline-flex;
+  align-items: stretch;
+  position: relative;
+}
+.radical-sign {
+  display: flex;
+  align-items: center;
+  font-size: 2.2em;
+  font-weight: 400;
+  line-height: 1;
+  margin-right: -0.05em;
+}
+.radicand {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid currentColor;
+  padding: 0.12em 0.08em 0.05em;
+}
+.math-root > sup {
+  position: absolute;
+  left: -0.1em;
+  top: 0;
+  font-size: 0.55em;
+}
+.math-parentheses {
+  display: inline-flex;
+  align-items: center;
+}
+.full-equations .variable-tooltip {
+  width: 200px;
+  white-space: normal;
+}
+.dashboard-caption {
+  justify-content: flex-end;
+}
+.breakdown-card > svg {
+  height: 260px;
+}
+@keyframes tunnel {
+  0%,
+  20% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  75%,
+  100% {
+    transform: translateX(19.185px);
+    opacity: 0.3;
+  }
+}
+/* Wide displays: text / larger instrument / vertically stacked profiles. */
+@media (min-width: 1440px) {
+  .is-presentation .presentation[data-wide="true"] {
+    grid-template-columns: 29% 42% 29%;
+    grid-template-rows: minmax(0, 1fr);
+    min-height: 0;
+    height: calc(100svh - 135px);
+    flex: none;
+    padding: 14px 0 20px;
+  }
+  .presentation[data-wide="true"] .lesson-copy {
+    grid-column: 1;
+    grid-row: 1;
+    padding: 14px 14px 0 0;
+    max-height: 100%;
+  }
+  .presentation[data-wide="true"] .lesson-copy h1 {
+    font-size: clamp(28px, 2.2vw, 38px);
+  }
+  .presentation[data-wide="true"] .lesson-theory {
+    font-size: 12px;
+  }
+  .is-presentation .presentation[data-wide="true"] .scene-position {
+    position: relative;
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    width: 112%;
+    left: auto;
+    top: auto;
+    transform: none;
+    margin: -50px -6% 0;
+  }
+  .presentation[data-wide="true"] .scene-summary {
+    position: absolute;
+    bottom: 34px;
+    left: 29%;
+    width: 42%;
+    margin: 0;
+  }
+  .presentation[data-wide="true"] .lesson-dashboard {
+    grid-column: 3;
+    grid-row: 1;
+    padding-top: 0;
+    height: 100%;
+    min-height: 0;
+  }
+  .presentation[data-wide="true"] .dashboard-caption {
+    height: 24px;
+    margin: 0 0 8px;
+  }
+  .presentation[data-wide="true"] .profile-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    height: calc(100% - 32px);
+  }
+  .presentation[data-wide="true"][data-stage="0"] .profile-grid,
+  .presentation[data-wide="true"][data-stage="3"] .profile-grid {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+  .presentation[data-wide="true"] .profile-card {
+    display: flex;
+    flex-direction: column;
+    padding: 14px;
+    min-height: 0;
+  }
+  .presentation[data-wide="true"] .profile-card > svg {
+    flex: 1;
+    min-height: 0;
+    height: 0;
+    max-height: none;
+  }
+  .presentation[data-wide="true"] .graded-charge {
+    margin-top: 18px;
+  }
+  .presentation[data-wide="true"] .graded-charge .profile-card {
+    height: clamp(170px, 22vh, 245px);
+  }
+  .presentation[data-wide="true"] .graded-comparison {
+    display: none;
+  }
+  /* Breakdown uses four quadrants, with the instrument below its introduction. */
+  .is-presentation .presentation[data-wide="true"][data-stage="2"] {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 58% 42%;
+    column-gap: 30px;
+  }
+  .presentation[data-wide="true"][data-stage="2"] .lesson-copy {
+    grid-column: 1;
+    grid-row: 1;
+    max-width: 530px;
+    padding-top: 30px;
+  }
+  .presentation[data-wide="true"][data-stage="2"] .lesson-copy h1 {
+    font-size: clamp(32px, 3vw, 48px);
+  }
+  .is-presentation
+    .presentation[data-wide="true"][data-stage="2"]
+    .scene-position {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    margin: -50px 0 0;
+  }
+  .presentation[data-wide="true"][data-stage="2"] .scene-summary {
+    display: none;
+  }
+  .presentation[data-wide="true"][data-stage="2"] .lesson-dashboard,
+  .presentation[data-wide="true"][data-stage="2"] .profile-grid {
+    display: contents;
+  }
+  .presentation[data-wide="true"][data-stage="2"] .dashboard-caption {
+    display: none;
+  }
+  .presentation[data-wide="true"][data-stage="2"] .breakdown-card {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .presentation[data-wide="true"][data-stage="2"] .mechanism-note {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    margin-top: 20px;
+  }
+}
+@media (min-width: 1440px) and (max-height: 850px) {
+  .presentation[data-wide="true"] .lesson-copy h1 {
+    font-size: 28px;
+  }
+  .presentation[data-wide="true"] .lesson-theory {
+    font-size: 11px;
+    margin-top: 12px;
+  }
+  .presentation[data-wide="true"] .full-equations {
+    font-size: 19px;
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .presentation[data-wide="true"] .graded-charge {
+    margin-top: 12px;
+  }
+  .presentation[data-wide="true"] .graded-charge .profile-card {
+    height: 160px;
+  }
+  .presentation[data-wide="true"] .lesson-copy .voltage-control {
+    margin-top: 12px;
+  }
+}
+@media (max-width: 1439px) and (min-width: 760px) {
+  .full-equations {
+    font-size: 19px;
+    gap: 10px;
+    margin: 16px 0;
+  }
+}
+@media (max-width: 759px) {
+  .full-equations {
+    font-size: clamp(15px, 4.7vw, 21px);
+    gap: 14px;
+    margin: 20px 0;
+  }
+  .full-equations .variable-tooltip {
+    position: fixed;
+    top: 85px;
+    bottom: auto;
+    left: 8%;
+    width: 84%;
+  }
+}
+@media (min-width: 1440px) {
+  .presentation[data-wide="true"] .scene-summary {
+    grid-column: 1 / -1;
+  }
+}
+.lesson-copy {
+  min-width: 0;
+}
+@media (max-width: 759px) {
+  .lesson-copy {
+    width: 100%;
+  }
 }

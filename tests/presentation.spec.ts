@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { solveLesson, LESSON_SCALE } from "../src/physics/lesson";
 const titles = [
   "The equilibrium junction",
-  "Reverse bias: wider, stronger",
+  "Reverse bias",
   "When reverse bias reaches its limit",
   "A linearly graded junction",
 ];
@@ -146,17 +146,27 @@ test("layouts remain readable, monochrome, and accessible with reduced motion", 
       const bounds = await page.evaluate(() => {
         const r = (s: string) =>
           document.querySelector(s)!.getBoundingClientRect();
+        const profiles = [
+          ...document.querySelectorAll(".profile-card,.mechanism-note"),
+        ].map((el) => el.getBoundingClientRect());
         return {
-          copy: r(".lesson-copy").bottom,
-          graphs: r(".lesson-dashboard").top,
-          graphBottom: r(".lesson-dashboard").bottom,
+          copy: r(".lesson-copy"),
+          graphs: r(".lesson-dashboard"),
+          cards: profiles.map((r) => ({
+            top: r.top,
+            bottom: r.bottom,
+            left: r.left,
+            right: r.right,
+          })),
           footer: r(".footer").top,
           body: document.body.scrollHeight,
         };
       });
-      expect(bounds.copy).toBeLessThanOrEqual(bounds.graphs);
-      expect(bounds.graphBottom).toBeLessThanOrEqual(bounds.footer);
-      if (width >= 1024 && height >= 768)
+      if (width < 1440)
+        expect(bounds.copy.bottom).toBeLessThanOrEqual(bounds.graphs.top);
+      for (const card of bounds.cards)
+        expect(card.bottom).toBeLessThanOrEqual(bounds.footer);
+      if (width >= 1440 && height >= 768)
         expect(bounds.body).toBeLessThanOrEqual(height);
     }
   }
