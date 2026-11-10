@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { GraphSweep } from "./GraphSweep";
 import { Variable } from "./Variable";
 import { Avalanche } from "./Avalanche";
 import { Equations } from "./Equations";
@@ -172,6 +173,7 @@ function Profile({
         <g clipPath={`url(#${id}-reveal)`}>
           <path d={`${d} L352,${y(0)} L44,${y(0)} Z`} fill={`url(#${id})`} />
           <path className="profile-line" d={d} />
+          <GraphSweep paths={[d]} />
           {field && (
             <circle cx={px(0)} cy={y(-s.peakFieldVM)} r="3" fill="#fff" />
           )}
@@ -218,6 +220,7 @@ function Bands({ s }: { s: LessonSolution }) {
         </g>
         <path d={band(0)} className="profile-line" />
         <path d={band(-eg)} className="profile-line" />
+        <GraphSweep paths={[band(0), band(-eg)]} />
         <path
           d={`M44,${y(0)} H${px(-s.half)} M${px(s.half)},${y(-s.reverseVoltageV)} H352`}
           className="fermi-line"

@@ -57,8 +57,14 @@ export function Junction({
   const connected = presentation.lesson
     ? stage === 1 || stage === 3
     : stage >= 2;
-  const connection =
-    !presentation.lesson && stage === 2 ? Math.min(1, progress * 3) : 1;
+  const connection = presentation.lesson
+    ? presentation.reducedMotion
+      ? 1
+      : Math.min(1, (progress * 12) / 1.8)
+    : stage === 2
+      ? Math.min(1, progress * 3)
+      : 1;
+  const sourceFirst = presentation.lesson && !physical;
   const active = selected || hovered;
   const wireP: WorldPoint[] = [
     [0, 0, 36],
@@ -507,7 +513,7 @@ export function Junction({
         )}
       </g>
       <g
-        opacity={connected ? connection : 0}
+        opacity={connected ? (sourceFirst ? 1 : connection) : 0}
         aria-hidden={!connected || !showCircuit}
         style={{ display: showCircuit ? undefined : "none" }}
         className="layer-fade"
@@ -525,7 +531,7 @@ export function Junction({
             <path
               className="circuit-wire"
               key={i}
-              d={wirePath(route)}
+              d={wirePath(sourceFirst ? [...route].reverse() : route)}
               pathLength="1"
               strokeDasharray="1"
               strokeDashoffset={1 - connection}

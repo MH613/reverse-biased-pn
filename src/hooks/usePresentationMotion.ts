@@ -76,10 +76,12 @@ export function usePresentationMotion(
   }, [stage, playing, bias, manualVoltage, reducedMotion, enabled, cycle]);
   const reset = useCallback(() => {
     elapsed.current = 0;
+    setFrame((f) => ({ ...f, progress: 0 }));
     setCycle((n) => n + 1);
   }, []);
   const skip = useCallback(() => {
     elapsed.current = DURATION;
+    setFrame((f) => ({ ...f, progress: 1 }));
     setCycle((n) => n + 1);
   }, []);
   return { frame, reset, skip };

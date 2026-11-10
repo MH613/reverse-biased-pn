@@ -898,3 +898,25 @@ output {
 .math-fraction {
   margin: 0;
 }
+
+/* Low-contrast oscilloscope sweep; profile geometry never oscillates. */
+.scope-sweep {
+  animation: scope-sweep 9s linear infinite;
+}
+@keyframes scope-sweep {
+  from {
+    transform: translateX(-48px);
+  }
+  to {
+    transform: translateX(380px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .graph-sweep {
+    display: none;
+  }
+}
+
+.full-equations[data-junction="graded"] .math-fraction {
+  font-size: 1em;
+}

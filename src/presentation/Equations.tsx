@@ -58,6 +58,7 @@ export function Equations({ stage, bias }: { stage: number; bias: BiasMode }) {
   return (
     <div
       className="full-equations"
+      data-junction={graded ? "graded" : "abrupt"}
       aria-label={
         graded
           ? "Linearly graded junction equations"
