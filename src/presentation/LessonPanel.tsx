@@ -279,7 +279,8 @@ function Bands({ s }: { s: LessonSolution }) {
 }
 function Breakdown({ mechanism }: { mechanism: "avalanche" | "zener" }) {
   const avalanche = mechanism === "avalanche";
-  const { playing } = usePresentation();
+  const { playing, reducedMotion } = usePresentation();
+  const tunnelId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   return (
     <article className="profile-card breakdown-card">
       <div className="card-heading">
@@ -297,16 +298,35 @@ function Breakdown({ mechanism }: { mechanism: "avalanche" | "zener" }) {
         }
       >
         <defs>
-          <marker
-            id="mechanism-arrow"
-            markerWidth="7"
-            markerHeight="7"
-            refX="6"
-            refY="3"
-            orient="auto"
+          <linearGradient
+            id={`${tunnelId}-fade`}
+            gradientUnits="userSpaceOnUse"
+            x1="182"
+            x2="302"
+            y1="0"
+            y2="0"
           >
-            <path d="M0 0 L6 3 L0 6" fill="none" stroke="#fff" />
-          </marker>
+            <stop offset="0" stopColor="#fff" stopOpacity="0" />
+            <stop offset=".2" stopColor="#fff" stopOpacity="1" />
+            <stop offset=".8" stopColor="#fff" stopOpacity="1" />
+            <stop offset="1" stopColor="#fff" stopOpacity="0" />
+          </linearGradient>
+          <mask
+            id={`${tunnelId}-transport`}
+            maskUnits="userSpaceOnUse"
+            x="176"
+            y="170"
+            width="132"
+            height="30"
+          >
+            <rect
+              x="176"
+              y="170"
+              width="132"
+              height="30"
+              fill={`url(#${tunnelId}-fade)`}
+            />
+          </mask>
         </defs>
         {avalanche ? (
           <g>
@@ -342,21 +362,28 @@ function Breakdown({ mechanism }: { mechanism: "avalanche" | "zener" }) {
               <path d="M42 34 H192 C218 34 230 226 256 226 H438" />
               <path d="M42 126 H192 C218 126 230 318 256 318 H438" />
             </g>
-            <path
-              className="tunnel-path"
-              d="M215.334 180 H234.519"
-              stroke="#eee"
-              strokeWidth="2"
-              strokeDasharray="3 3"
-              markerEnd="url(#mechanism-arrow)"
-            />
-            <circle
-              className="tunneling-electron"
-              cx="215.334"
-              cy="180"
-              r="5"
-              fill="var(--n-ink)"
-            />
+            <g
+              className="tunneling-transport"
+              mask={`url(#${tunnelId}-transport)`}
+            >
+              <path
+                className="tunnel-path"
+                d="M182 191 H302"
+                stroke="#ccc"
+                strokeWidth="1.6"
+                strokeDasharray="5 7"
+                fill="none"
+              />
+              <circle
+                className="tunneling-electron"
+                cx={reducedMotion ? 224 : 182}
+                cy="180"
+                r="5"
+                fill="var(--n-ink)"
+                stroke="var(--n-surface)"
+                strokeWidth=".6"
+              />
+            </g>
             <g className="mechanism-labels">
               <text x="42" y="30">
                 P · E꜀

@@ -10,6 +10,14 @@ test("complete Inter equations, zoomed equilibrium graphs, and textbook citation
     .getByRole("button", { name: "Explore the junction", exact: true })
     .click();
   await expect(page.locator("[data-equation]")).toHaveCount(2);
+  await expect(page.locator('[data-profile="field"]')).toHaveCSS(
+    "background-color",
+    "rgb(245, 245, 247)",
+  );
+  await expect(page.locator('[data-profile="field"] .profile-line')).toHaveCSS(
+    "stroke",
+    "rgb(116, 96, 139)",
+  );
   await expect(page.locator('[data-profile="field"]')).toHaveAttribute(
     "data-spatial-range-um",
     "0.6",
@@ -143,14 +151,44 @@ test("Zener electron tunnels at constant energy and avalanche branches 1 â†’ 2 â
   await page
     .getByRole("button", { name: "Zener tunneling", exact: true })
     .click();
+  await expect(page.locator(".breakdown-card")).toHaveCSS(
+    "background-color",
+    "rgb(32, 32, 32)",
+  );
+  await expect(page.locator(".tunnel-path")).not.toHaveAttribute(
+    "marker-end",
+    /.+/,
+  );
+  const fade = await page
+    .locator(".breakdown-card linearGradient stop")
+    .evaluateAll((els) => els.map((el) => el.getAttribute("stop-opacity")));
+  expect(fade).toEqual(["0", "1", "1", "0"]);
+  const electronY = Number(
+    await page.locator(".tunneling-electron").getAttribute("cy"),
+  );
   const positions = await page.locator(".tunnel-path").evaluate((el) => {
     const p = el as SVGPathElement;
     const a = p.getPointAtLength(0),
       b = p.getPointAtLength(p.getTotalLength());
-    return { dy: b.y - a.y, dx: b.x - a.x };
+    return { dy: b.y - a.y, dx: b.x - a.x, y: a.y };
   });
   expect(positions.dy).toBe(0);
-  expect(positions.dx).toBeGreaterThan(0);
+  expect(positions.dx).toBeGreaterThanOrEqual(100);
+  expect(positions.y).toBeGreaterThan(electronY);
+  const dash = await page.locator(".tunnel-path").evaluate((el) => {
+    const a = el.getAnimations()[0];
+    a.pause();
+    a.currentTime = 100;
+    const before = parseFloat(getComputedStyle(el).strokeDashoffset);
+    a.currentTime = 600;
+    return {
+      before,
+      after: parseFloat(getComputedStyle(el).strokeDashoffset),
+      iterations: a.effect!.getTiming().iterations,
+    };
+  });
+  expect(dash.after).toBeLessThan(dash.before);
+  expect(dash.iterations).toBe(Infinity);
   const move = await page.locator(".tunneling-electron").evaluate((el) => {
     for (const a of el.getAnimations()) {
       a.pause();
@@ -161,6 +199,15 @@ test("Zener electron tunnels at constant energy and avalanche branches 1 â†’ 2 â
   });
   expect(move.x).toBeGreaterThan(0);
   expect(move.y).toBe(0);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(page.locator(".tunnel-path")).toHaveCSS(
+    "animation-name",
+    "none",
+  );
+  await expect(page.locator(".tunneling-electron")).toHaveAttribute(
+    "cx",
+    "224",
+  );
 });
 
 test("1536px windows use wide columns regardless of height and equations stay smaller than headings", async ({
