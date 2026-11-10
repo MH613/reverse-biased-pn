@@ -124,8 +124,8 @@ function Profile({
       >
         <defs>
           <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <stop stopColor="#fff" stopOpacity=".22" />
-            <stop offset="1" stopColor="#fff" stopOpacity=".02" />
+            <stop stopColor="var(--trace-line)" stopOpacity=".18" />
+            <stop offset="1" stopColor="var(--trace-line)" stopOpacity=".02" />
           </linearGradient>
           <clipPath id={`${id}-reveal`}>
             <rect
@@ -175,7 +175,12 @@ function Profile({
           <path className="profile-line" d={d} />
           <GraphSweep paths={[d]} />
           {field && (
-            <circle cx={px(0)} cy={y(-s.peakFieldVM)} r="3" fill="#fff" />
+            <circle
+              cx={px(0)}
+              cy={y(-s.peakFieldVM)}
+              r="3"
+              className="profile-peak"
+            />
           )}
         </g>
       </svg>
@@ -350,7 +355,7 @@ function Breakdown({ mechanism }: { mechanism: "avalanche" | "zener" }) {
               cx="215.334"
               cy="180"
               r="5"
-              fill="#fff"
+              fill="var(--n-ink)"
             />
             <g className="mechanism-labels">
               <text x="42" y="30">

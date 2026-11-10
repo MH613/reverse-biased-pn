@@ -211,14 +211,14 @@ export const ScientificPanel = memo(function ScientificPanel() {
             y="22"
             width={junction - 20}
             height="65"
-            fill="#fafafa"
+            fill="var(--p-surface)"
           />
           <rect
             x={junction}
             y="22"
             width={340 - junction}
             height="65"
-            fill="#f3f3f3"
+            fill="var(--n-surface)"
           />
           <rect
             className="section-depletion"
@@ -226,7 +226,7 @@ export const ScientificPanel = memo(function ScientificPanel() {
             y="22"
             width={right - left}
             height="65"
-            fill="#e8e8e8"
+            fill="var(--depletion-surface)"
           />
           <rect
             x={left}
@@ -247,6 +247,7 @@ export const ScientificPanel = memo(function ScientificPanel() {
                   y={40 + row * 17}
                   textAnchor="middle"
                   className="section-ion"
+                  style={{ fill: x < 0 ? "var(--p-ink)" : "var(--n-ink)" }}
                   opacity={
                     0.12 +
                     0.68 *
@@ -284,10 +285,10 @@ export const ScientificPanel = memo(function ScientificPanel() {
             d={`M${right},22 V87`}
             data-position-m={s.xnM}
           />
-          <text x="25" y="15">
+          <text className="region-p-label" x="25" y="15">
             P
           </text>
-          <text x="335" y="15" textAnchor="end">
+          <text className="region-n-label" x="335" y="15" textAnchor="end">
             N
           </text>
           <path

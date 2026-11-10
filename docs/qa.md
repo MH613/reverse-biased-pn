@@ -1,6 +1,6 @@
 # Final integration and quality assurance
 
-The application remains a frontend-only React/TypeScript exhibit with locally bundled Inter fonts, monochrome SVG engineering illustrations, four presentation stages, and an interactive circuit laboratory. No backend, external scientific API, WebGL context, or runtime font download is required.
+The application remains a frontend-only React/TypeScript exhibit with locally bundled Inter fonts, SVG engineering illustrations with muted red/blue semiconductor regions, four presentation stages, and an interactive circuit laboratory. No backend, external scientific API, WebGL context, or runtime font download is required.
 
 ## Final changes
 
@@ -45,7 +45,7 @@ Final results: **production build passed; all 21 automated tests passed in appro
 - Pointer dragging at multiple zooms, panning, grid alignment, collision avoidance including swept fast motion, connected equipment movement, wire anchor alignment, separate axis-aligned routes across distinct layouts and cached rerouting.
 - Dynamic reduced-motion preferences, cancellation of held pointer capture on mode changes, terminal hover feedback, rapid voltage reversals, full reset of layout/electrical state, and reset persistence after reopening.
 - Independent 0/2/5/10 V references, 1,000-point monotonic sweep, charge neutrality, piecewise Poisson slopes, triangle area, current plateau and pre-breakdown field margin. Actual graph points, cross-section boundaries, isometric geometry and instrument text agree with the model, including sampled intermediate interpolation frames.
-- Vertical overview separation at 320×568, 390×844, 844×390, 1024×768, 1366×768, 1440×900 and 1920×1080; desktop/projector viewport fit; mobile overflow checks; grayscale and locally bundled Inter.
+- Vertical overview separation at 320×568, 390×844, 844×390, 1024×768, 1366×768, 1440×900 and 1920×1080; desktop/projector viewport fit; mobile overflow checks; neutral page chrome, muted red/blue junctions, purple graph traces, and locally bundled Inter.
 
 A Chromium screenshot review covered all four stages and the connected 10 V laboratory, including the scrolled scientific panel, at 1440×960, 1024×768, 390×844 and 844×390. A production-preview smoke check exercises all stages, a connected 0/2/5/10 V circuit, reset and return. The automated browser runs collect JavaScript errors in the principal workflows.
 

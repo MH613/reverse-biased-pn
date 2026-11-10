@@ -121,7 +121,7 @@ test("four-stage scientific narrative synchronizes graphs, geometry, bands and c
   expect(errors).toEqual([]);
 });
 
-test("layouts remain readable, monochrome, and accessible with reduced motion", async ({
+test("layouts retain neutral chrome, muted scientific accents, and reduced-motion support", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -172,12 +172,40 @@ test("layouts remain readable, monochrome, and accessible with reduced motion", 
   }
   const colors = await page.locator(".app-shell *").evaluateAll((els) =>
     els
+      .filter(
+        (el) =>
+          !el.closest(
+            ".junction-illustration,.profile-card,.avalanche-cascade",
+          ),
+      )
       .flatMap((el) => {
         const s = getComputedStyle(el);
         return [s.color, s.backgroundColor, s.fill, s.stroke];
       })
       .filter((c) => c.startsWith("rgb")),
   );
+  const palette = await page.evaluate(() => {
+    const channels = (value: string) =>
+      value
+        .match(/[\d.]+/g)!
+        .slice(0, 3)
+        .map(Number);
+    const p = document.querySelector('[data-region="p"]')!,
+      n = document.querySelector('[data-region="n"]')!,
+      trace = document.querySelector(".profile-line")!,
+      card = document.querySelector(".profile-card")!;
+    return {
+      p: channels(getComputedStyle(p).fill),
+      n: channels(getComputedStyle(n).fill),
+      trace: channels(getComputedStyle(trace).stroke),
+      radius: getComputedStyle(card).borderRadius,
+    };
+  });
+  expect(palette.p[0]).toBeGreaterThan(palette.p[2]);
+  expect(palette.n[2]).toBeGreaterThan(palette.n[0]);
+  expect(palette.trace[0]).toBeGreaterThan(palette.trace[1]);
+  expect(palette.trace[2]).toBeGreaterThan(palette.trace[0]);
+  expect(palette.radius).toBe("0px");
   for (const c of colors) {
     const rgb = c
       .match(/[\d.]+/g)!

@@ -209,15 +209,21 @@ export function Junction({
             fill="#e4e4e4"
           />
         ))}
-        <polygon
-          points={points([
-            [0, 0, 60],
-            [480, 0, 60],
-            [480, 0, 0],
-            [0, 0, 0],
-          ])}
-          fill="#efefef"
-        />
+        {[
+          { left: 0, right: 240, fill: "var(--p-depth)" },
+          { left: 240, right: 480, fill: "var(--n-depth)" },
+        ].map((face) => (
+          <polygon
+            key={face.left}
+            points={points([
+              [face.left, 0, 60],
+              [face.right, 0, 60],
+              [face.right, 0, 0],
+              [face.left, 0, 0],
+            ])}
+            fill={face.fill}
+          />
+        ))}
         <polygon
           points={points([
             [0, 0, 60],
@@ -234,14 +240,22 @@ export function Junction({
             [480, 170, 0],
             [480, 0, 0],
           ])}
-          fill="#eaeaea"
+          fill="var(--n-depth)"
         />
-        <polygon points={surface(0, 240)} fill="#f6f6f6" />
-        <polygon points={surface(240, 480)} fill="#f1f1f1" />
+        <polygon
+          data-region="p"
+          points={surface(0, 240)}
+          fill="var(--p-surface)"
+        />
+        <polygon
+          data-region="n"
+          points={surface(240, 480)}
+          fill="var(--n-surface)"
+        />
         <polygon
           className="depletion-surface"
           points={surface(left, right)}
-          fill="#e5e5e5"
+          fill="var(--depletion-surface)"
           stroke="none"
         />
         <polygon
@@ -251,7 +265,7 @@ export function Junction({
             [right, 0, 0],
             [left, 0, 0],
           ])}
-          fill="#e2e2e2"
+          fill="var(--depletion-surface)"
           stroke="none"
           opacity=".85"
         />
@@ -329,12 +343,12 @@ export function Junction({
               <circle
                 r="5.2"
                 fill={exposed ? "#f8f8f8" : "none"}
-                stroke="#848484"
+                stroke={x < 240 ? "var(--p-ink)" : "var(--n-ink)"}
                 strokeWidth=".8"
               />
               <path
                 d={x < 240 ? "M-2.2,0 H2.2" : "M-2.2,0 H2.2 M0,-2.2 V2.2"}
-                stroke="#6f6f6f"
+                stroke={x < 240 ? "var(--p-ink)" : "var(--n-ink)"}
                 strokeWidth=".9"
               />
             </g>
@@ -389,8 +403,9 @@ export function Junction({
                   cx={p[0]}
                   cy={p[1]}
                   r={minority ? 3.5 : 4.7}
-                  fill={hole ? "#ffffff" : "#333333"}
-                  stroke="#333333"
+                  data-carrier={hole ? "hole" : "electron"}
+                  fill={hole ? "#ffffff" : "var(--n-ink)"}
+                  stroke={hole ? "var(--p-ink)" : "var(--n-ink)"}
                   strokeWidth="1.4"
                 />
                 {!hole && (
@@ -403,7 +418,7 @@ export function Junction({
                 {hole && (
                   <path
                     d={`M${p[0] - 1.6},${p[1]} h3.2 M${p[0]},${p[1] - 1.6} v3.2`}
-                    stroke="#8f8f8f"
+                    stroke="var(--p-ink)"
                     strokeWidth=".8"
                   />
                 )}
@@ -487,10 +502,18 @@ export function Junction({
         fontSize="12"
         fontFamily="Inter, sans-serif"
       >
-        <text x={project(55, 185, 74)[0]} y={project(55, 185, 74)[1]}>
+        <text
+          fill="var(--p-ink)"
+          x={project(55, 185, 74)[0]}
+          y={project(55, 185, 74)[1]}
+        >
           P
         </text>
-        <text x={project(430, 185, 74)[0]} y={project(430, 185, 74)[1]}>
+        <text
+          fill="var(--n-ink)"
+          x={project(430, 185, 74)[0]}
+          y={project(430, 185, 74)[1]}
+        >
           N
         </text>
         {(stage > 0 || presentation.lesson) && (

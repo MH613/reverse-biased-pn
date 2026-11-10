@@ -88,8 +88,8 @@ function Carrier({
       cx={reducedMotion ? (x + tx) / 2 : x}
       cy={reducedMotion ? (y + ty) / 2 : y}
       r={flight.hole ? 3.5 : 4}
-      fill={flight.hole ? "#fff" : "#555"}
-      stroke={flight.hole ? "#777" : "#ddd"}
+      fill={flight.hole ? "#fff" : "var(--n-ink)"}
+      stroke={flight.hole ? "var(--p-ink)" : "var(--n-surface)"}
       strokeWidth="1"
       opacity={reducedMotion ? 0.8 : 0}
     />

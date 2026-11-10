@@ -4,6 +4,16 @@
   color: #202020;
   background: #fff;
   font-synthesis: none;
+  --p-ink: #985b57;
+  --n-ink: #547894;
+  --p-surface: #f3e8e6;
+  --n-surface: #e7eef4;
+  --p-depth: #e6d7d4;
+  --n-depth: #d4e0eb;
+  --depletion-surface: #e7e4e9;
+  --trace-line: #bba6d3;
+  --trace-highlight: #ddc8f4;
+  --trace-ink: #74608b;
   --ink: #202020;
   --muted: #777;
   --line: #e9e9e9;

@@ -90,7 +90,7 @@ test("stage 2 and 4 wires draw from supply to junction, replay, and settle immed
   expect(await offset()).toBe(0);
 });
 
-test("graded expressions keep title-size semibold terms at wide and mobile widths", async ({
+test("graded expressions use reduced semibold typography at wide and mobile widths", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -116,8 +116,10 @@ test("graded expressions keep title-size semibold terms at wide and mobile width
         weight: equation.fontWeight,
       };
     });
-    expect(styles.equation).toBe(styles.heading);
-    expect(styles.fraction).toBe(styles.heading);
+    expect(
+      parseFloat(styles.equation) / parseFloat(styles.heading),
+    ).toBeCloseTo(0.76, 4);
+    expect(styles.fraction).toBe(styles.equation);
     expect(Number(styles.weight)).toBeGreaterThanOrEqual(600);
   }
 });

@@ -179,7 +179,7 @@
   color: #eee;
   background: #202020;
   border: 1px solid #303030;
-  border-radius: 18px;
+  border-radius: 0;
   padding: 15px 16px 12px;
   min-width: 0;
   overflow: hidden;
@@ -229,7 +229,7 @@
   stroke-dasharray: 3 5;
 }
 .profile-line {
-  stroke: #e6e6e6;
+  stroke: var(--trace-line);
   stroke-width: 2;
   fill: none;
   stroke-linejoin: miter;
@@ -591,7 +591,7 @@ output {
   gap: 16px;
   margin: 22px 0;
   font-family: inherit;
-  font-size: var(--lesson-heading-size);
+  font-size: calc(var(--lesson-heading-size) * 0.76);
   font-weight: 600;
   color: #333;
 }
@@ -919,4 +919,8 @@ output {
 
 .full-equations[data-junction="graded"] .math-fraction {
   font-size: 1em;
+}
+
+.profile-peak {
+  fill: var(--trace-highlight);
 }

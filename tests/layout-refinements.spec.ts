@@ -163,7 +163,7 @@ test("Zener electron tunnels at constant energy and avalanche branches 1 â†’ 2 â
   expect(move.y).toBe(0);
 });
 
-test("1536px windows use wide columns regardless of height and equations match headings", async ({
+test("1536px windows use wide columns regardless of height and equations stay smaller than headings", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -211,7 +211,9 @@ test("1536px windows use wide columns regardless of height and equations match h
           bodyWidth: document.body.scrollWidth,
         };
       });
-      expect(values.equationSize).toBe(values.headingSize);
+      expect(
+        parseFloat(values.equationSize) / parseFloat(values.headingSize),
+      ).toBeCloseTo(0.76, 4);
       expect(values.weight).toBeGreaterThanOrEqual(600);
       expect(values.bodyWidth).toBe(width);
       expect(values.cardBottom).toBeLessThanOrEqual(values.footerTop);

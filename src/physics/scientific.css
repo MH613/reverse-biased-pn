@@ -120,19 +120,19 @@
   fill: none;
 }
 .field-area {
-  fill: #00000006;
+  fill: #74608b0c;
   stroke: none;
 }
 .field-operating-profile,
 .width-curve {
   fill: none;
-  stroke: #555;
+  stroke: var(--trace-ink);
   stroke-width: 1.2;
   stroke-linejoin: round;
 }
 .field-peak-marker,
 .width-operating-point {
-  fill: #333;
+  fill: var(--trace-ink);
   stroke: #fff;
   stroke-width: 1;
 }
@@ -327,4 +327,11 @@
   .lab-panel:has(.science-panel) .lab-voltage {
     top: -15px;
   }
+}
+
+.science-panel svg .region-p-label {
+  fill: var(--p-ink);
+}
+.science-panel svg .region-n-label {
+  fill: var(--n-ink);
 }

@@ -16,6 +16,10 @@ export function GraphSweep({ paths }: { paths: string[] }) {
           <stop stopColor="#fff" stopOpacity="0" />
           <stop offset="1" stopColor="#fff" />
         </linearGradient>
+        <linearGradient id={`${id}-tint`} x1="0" x2="1" y1="0" y2="0">
+          <stop stopColor="var(--trace-highlight)" stopOpacity="0" />
+          <stop offset="1" stopColor="var(--trace-highlight)" />
+        </linearGradient>
         <clipPath id={`${id}-plot`}>
           <rect x="44" y="24" width="308" height="134" />
         </clipPath>
@@ -45,15 +49,20 @@ export function GraphSweep({ paths }: { paths: string[] }) {
             y="24"
             width="48"
             height="134"
-            fill={`url(#${id}-fade)`}
+            fill={`url(#${id}-tint)`}
             opacity=".035"
           />
-          <path d="M48 24 V158" stroke="#fff" strokeWidth=".7" opacity=".1" />
+          <path
+            d="M48 24 V158"
+            stroke="var(--trace-highlight)"
+            strokeWidth=".7"
+            opacity=".1"
+          />
         </g>
         <g
           mask={`url(#${id}-trace)`}
           fill="none"
-          stroke="#fff"
+          stroke="var(--trace-highlight)"
           strokeWidth="2.7"
           opacity=".65"
         >
