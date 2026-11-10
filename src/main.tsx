@@ -62,7 +62,7 @@ function App() {
     height: innerHeight,
   });
   const compact = viewport.width < 760;
-  const wide = viewport.width >= 1440 && viewport.height >= 720;
+  const wide = viewport.width >= 1440;
   useEffect(() => {
     const resize = () =>
       setViewport({ width: innerWidth, height: innerHeight });

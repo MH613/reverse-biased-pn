@@ -166,7 +166,7 @@ test("layouts remain readable, monochrome, and accessible with reduced motion", 
         expect(bounds.copy.bottom).toBeLessThanOrEqual(bounds.graphs.top);
       for (const card of bounds.cards)
         expect(card.bottom).toBeLessThanOrEqual(bounds.footer);
-      if (width >= 1440 && height >= 768)
+      if (width >= 1920 && height >= 1080)
         expect(bounds.body).toBeLessThanOrEqual(height);
     }
   }

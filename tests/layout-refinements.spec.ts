@@ -20,12 +20,10 @@ test("complete Inter equations, zoomed equilibrium graphs, and textbook citation
   await expect(
     page.locator('[data-equation="width"] .math-fraction'),
   ).toHaveCount(2);
-  const style = await page
-    .locator(".full-equations")
-    .evaluate((el) => ({
-      font: getComputedStyle(el).fontFamily,
-      size: parseFloat(getComputedStyle(el).fontSize),
-    }));
+  const style = await page.locator(".full-equations").evaluate((el) => ({
+    font: getComputedStyle(el).fontFamily,
+    size: parseFloat(getComputedStyle(el).fontSize),
+  }));
   expect(style.font).toContain("Inter");
   expect(style.size).toBeGreaterThanOrEqual(20);
   await page.getByRole("button", { name: "Next", exact: true }).click();
@@ -163,4 +161,62 @@ test("Zener electron tunnels at constant energy and avalanche branches 1 â†’ 2 â
   });
   expect(move.x).toBeGreaterThan(0);
   expect(move.y).toBe(0);
+});
+
+test("1536px windows use wide columns regardless of height and equations match headings", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  for (const [width, height] of [
+    [1536, 600],
+    [1536, 680],
+    [1536, 720],
+    [1536, 864],
+    [390, 844],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/");
+    await page
+      .getByRole("button", { name: "Explore the junction", exact: true })
+      .click();
+    for (const stage of [0, 1, 3]) {
+      await page.locator(".stage-track button").nth(stage).click();
+      await expect(page.locator(".presentation")).toHaveAttribute(
+        "data-wide",
+        width >= 1440 ? "true" : "false",
+      );
+      const values = await page.evaluate(() => {
+        const heading = document.querySelector("h1")!,
+          equations = document.querySelector(".full-equations")!;
+        const h = getComputedStyle(heading),
+          e = getComputedStyle(equations);
+        const copy = document
+          .querySelector(".lesson-copy")!
+          .getBoundingClientRect();
+        const field = document
+          .querySelector('[data-profile="field"]')!
+          .getBoundingClientRect();
+        const cards = [...document.querySelectorAll(".profile-card")].map(
+          (el) => el.getBoundingClientRect(),
+        );
+        return {
+          headingSize: h.fontSize,
+          equationSize: e.fontSize,
+          weight: Number(e.fontWeight),
+          copyRight: copy.right,
+          fieldLeft: field.left,
+          cardBottom: Math.max(...cards.map((r) => r.bottom)),
+          footerTop: document.querySelector(".footer")!.getBoundingClientRect()
+            .top,
+          bodyWidth: document.body.scrollWidth,
+        };
+      });
+      expect(values.equationSize).toBe(values.headingSize);
+      expect(values.weight).toBeGreaterThanOrEqual(600);
+      expect(values.bodyWidth).toBe(width);
+      expect(values.cardBottom).toBeLessThanOrEqual(values.footerTop);
+      if (width >= 1440)
+        expect(values.fieldLeft).toBeGreaterThan(values.copyRight);
+    }
+  }
 });
