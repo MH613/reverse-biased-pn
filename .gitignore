@@ -6,3 +6,4 @@ playwright-report/
 
 # Generated from pinned npm dependencies before dev/build.
 public/teammate/vendor/
+src/imported/readerRevision.ts

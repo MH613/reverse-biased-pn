@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { readerRevision } from "./readerRevision";
 export type ImportedMode = "lab" | "read";
 export function ImportedView({
   mode,
@@ -44,7 +45,9 @@ export function ImportedView({
     };
   }, [mode, onContinue]);
   const source =
-    mode === "lab" ? "index.html?embedded=lab&scene=5" : "page.html";
+    mode === "lab"
+      ? "index.html?embedded=lab&scene=5"
+      : `page.html?v=${readerRevision}`;
   return (
     <section
       className="imported-view"

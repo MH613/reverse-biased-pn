@@ -58,6 +58,12 @@ test("the reader omits recap and keeps figures, equations and open lab working l
     .getByRole("button", { name: "Read as a page", exact: true })
     .click();
   const f = page.frameLocator('iframe[title="Read as a page"]');
+  await expect(page.locator('iframe[title="Read as a page"]')).toHaveAttribute(
+    "src",
+    /page\.html\?v=[a-f0-9]{12}$/,
+  );
+  await expect(f.locator("body")).not.toContainText("Physics code and 130 automated tests");
+  await expect(f.locator('a[href="https://github.com/obadawaleed44/pn-junction"]')).toHaveCount(0);
   await expect(f.locator(".katex")).not.toHaveCount(0);
   await expect(f.locator("#stage-eq canvas")).toHaveCount(1);
   await expect(f.locator("main > section")).toHaveCount(6);

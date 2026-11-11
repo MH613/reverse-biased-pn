@@ -1,6 +1,7 @@
 // Serve the copied app's pinned dependencies locally, with their original fonts.
 import { copyFile, mkdir, readFile, writeFile, cp } from "node:fs/promises";
 import path from "node:path";
+import { createHash } from "node:crypto";
 const root = path.resolve("node_modules"),
   out = path.resolve("public/teammate/vendor");
 async function copy(src, dest) {
@@ -73,4 +74,13 @@ for (const [family, styles] of [
   );
 }
 await writeFile(path.join(out, "plex.css"), fonts);
+// A changed reader must have a new URL, even while the old HTML remains cached.
+const readerRevision = createHash("sha256")
+  .update(await readFile("public/teammate/guide/page.html"))
+  .digest("hex")
+  .slice(0, 12);
+await writeFile(
+  "src/imported/readerRevision.ts",
+  `export const readerRevision = ${JSON.stringify(readerRevision)};\n`,
+);
 console.log("Prepared teammate renderer, equation fonts, and typefaces.");
