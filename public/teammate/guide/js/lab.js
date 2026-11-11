@@ -70,10 +70,14 @@ const PANEL = `
   <svg data-r="iv" viewBox="0 0 420 250" role="img" aria-label="Current against reverse voltage, logarithmic"></svg>
   <div class="row"><button class="btn small" data-r="record" disabled>Record point</button><button class="btn ghost small" data-r="auto">Wire it for me</button><button class="btn ghost small" data-r="clear">Clear cables</button></div>`;
 
-export function createLab(root, { mode = 'open', onStep = () => {}, onChange = () => {} } = {}) {
+export function createLab(root, { mode = 'open', recording = true, onStep = () => {}, onChange = () => {} } = {}) {
   const side = root.querySelector('.lab-side');
   side.innerHTML = PANEL;
   const r = (k) => side.querySelector(`[data-r="${k}"]`);
+  if (!recording) {
+    r('iv').remove();
+    r('record').remove();
+  }
   const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   const host = root.querySelector('.bench');
   const guided = mode === 'guided';
@@ -94,16 +98,17 @@ export function createLab(root, { mode = 'open', onStep = () => {}, onChange = (
   }));
 
   // ---------------------------------------------------------------- I–V chart
-  const chart = new Chart(r('iv'), { x: 58, y: 26, w: 340, h: 190 },
+  const chart = recording ? new Chart(r('iv'), { x: 58, y: 26, w: 340, h: 190 },
     { range: [0, 120], label: 'reverse voltage V_R (V)', ticks: [0, 20, 40, 60, 80, 100, 120] },
-    { range: [1e-15, 1e-2], log: true, label: '|I| (A), log scale', ticks: [1e-15, 1e-12, 1e-9, 1e-6, 1e-3], format: (v) => formatSI(v, 'A').replace('1.00 ', '1 ') });
+    { range: [1e-15, 1e-2], log: true, label: '|I| (A), log scale', ticks: [1e-15, 1e-12, 1e-9, 1e-6, 1e-3], format: (v) => formatSI(v, 'A').replace('1.00 ', '1 ') }) : null;
   const curves = { ideal: [], real: [] };
-  for (let v = 0.05; v <= 120; v += 0.5) {
+  for (let v = 0.05; recording && v <= 120; v += 0.5) {
     const op = operatingPoint(JUNCTION, -v);
     curves.ideal.push([v, Math.abs(diodeCurrent(JUNCTION, -v).diffusion)]);
     curves.real.push([-op.V, Math.abs(op.total)]);
   }
   function drawChart() {
+    if (!chart) return;
     chart.clear();
     chart.line(curves.ideal, { stroke: css('--hair'), 'stroke-dasharray': '5 4' });
     chart.line(curves.real, { stroke: css('--c-current') });
@@ -136,7 +141,7 @@ export function createLab(root, { mode = 'open', onStep = () => {}, onChange = (
   function refresh() {
     const c = (state.circuit = analyseCircuit(state.wires, present()));
     r('supply').disabled = !c.valid;
-    r('record').disabled = !(c.valid && c.reverse && c.hasAmmeter);
+    if (recording) r('record').disabled = !(c.valid && c.reverse && c.hasAmmeter);
     state.op = c.valid ? operatingPoint(JUNCTION, c.reverse ? -state.setV : state.setV) : null;
     const V = state.op?.V ?? 0;
     const VR = Math.max(-0.68, -V); // negative = forward bias: W shrinks
@@ -172,7 +177,7 @@ export function createLab(root, { mode = 'open', onStep = () => {}, onChange = (
     else if (state.op?.limited && c.reverse) task = `<b class="c-current">Breakdown.</b> At ${(-V).toFixed(1)} V the peak field reached E<sub>crit</sub>: carriers knock loose new electron–hole pairs, which knock loose more (an avalanche). The current jumps from picoamps to the supply's 1 mA limit.`;
     else if (!c.reverse) task = 'Forward bias: see the note below.';
     else if (!c.hasAmmeter) task = state.setV < 2 ? 'Reverse bias: n to +, p to −. Now turn the supply up and watch W and E grow.' : 'W and E<sub>max</sub> grow with the voltage. But is any current flowing?';
-    else task = 'Measuring. Raise the voltage and record a few points.';
+    else task = recording ? 'Measuring. Raise the voltage and record a few points.' : 'Measuring. Raise the voltage and watch the ammeter.';
     r('task').innerHTML = task;
 
     if (guided) {
@@ -196,7 +201,7 @@ export function createLab(root, { mode = 'open', onStep = () => {}, onChange = (
     refresh();
   });
   r('clear').addEventListener('click', () => { state.wires = []; bench?.setWires([]); refresh(); });
-  r('record').addEventListener('click', () => {
+  r('record')?.addEventListener('click', () => {
     if (!state.op) return;
     state.points.push({ v: -state.op.V, i: Math.abs(state.op.total) });
     drawChart();

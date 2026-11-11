@@ -1,4 +1,4 @@
-// main.js — the guide, seven sections. Wires the drawings to the physics.
+// main.js — the guide, six sections. Wires the drawings to the physics.
 
 import { depletionEdges, fieldAt, chargeDensityAt, potentialAt, builtInVoltage, criticalField, permittivity, Q } from '../../js/physics.js';
 import {
@@ -184,34 +184,7 @@ drawGraded();
   for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) ctx.fillRect(off + c * cell, off + r * cell, cell, cell);
 })();
 
-// ------------------------------------------------------------------ 06 recap quiz
-const QUIZ = [
-  { q: 'You raise V_R from 0 to 10 V. What happens to W?', options: ['It grows like √(V_bi + V_R)', 'It grows linearly with V_R', 'It stays the same'], answer: 0, why: 'W² ∝ V_bi + V_R: more voltage needs more uncovered charge.' },
-  { q: 'Where is the electric field strongest?', options: ['At the edges of the depletion region', 'At the junction, x = 0', 'In the neutral regions'], answer: 1, why: 'E(x) is a triangle: zero at both edges, peak at the junction.' },
-  { q: 'Why does the reverse current grow with V_R before breakdown?', options: ['The diode heats up', 'It is generated inside W, and W grows', 'The ammeter is in parallel'], answer: 1, why: 'Electron–hole pairs generated in the depletion region are swept out; a wider W makes more of them.' },
-];
-QUIZ.forEach((item, i) => {
-  const box = document.createElement('div');
-  box.className = 'q';
-  const sub = (s) => s.replace(/_([A-Za-z]+)/g, '<sub>$1</sub>');
-  box.innerHTML = `<p>${i + 1}. ${sub(item.q)}</p><div class="choices"></div><p class="why" hidden></p>`;
-  item.options.forEach((text, k) => {
-    const b = document.createElement('button');
-    b.className = 'choice';
-    b.innerHTML = sub(text);
-    b.addEventListener('click', () => {
-      box.querySelectorAll('.choice').forEach((x) => x.classList.remove('right', 'wrong'));
-      b.classList.add(k === item.answer ? 'right' : 'wrong');
-      const why = box.querySelector('.why');
-      why.hidden = false;
-      why.textContent = (k === item.answer ? 'Correct. ' : 'Not quite. ') + item.why;
-    });
-    box.querySelector('.choices').appendChild(b);
-  });
-  $('quiz').appendChild(box);
-});
-
-// ------------------------------------------------------------------ 07 open lab
+// ------------------------------------------------------------------ 06 open lab
 const open = createLab($('lab-open'), { mode: 'open' });
 
 // ------------------------------------------------------------------ navigation + maths

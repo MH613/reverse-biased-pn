@@ -163,6 +163,7 @@ let guess = null;
 let lab = null; // createLab reports its first state before it returns
 lab = createLab($('lab-present'), {
   mode: 'guided',
+  recording: !embeddedLab,
   onChange({ reading, limited, setV }) {
     const c = lab?.state.circuit;
     if (!c) return;
@@ -236,6 +237,10 @@ SCENES.forEach((_, i) => {
   dots.appendChild(li);
 });
 function go(i) {
+  if (embeddedLab && index === 5 && i === 6 && parent !== window) {
+    parent.postMessage({ type: 'junction:lab-complete' }, location.origin);
+    return;
+  }
   i = Math.max(embeddedLab ? 4 : 0, Math.min(embeddedLab ? 5 : SCENES.length - 1, i));
   if (i === index) return;
   SCENES[index]?.leave?.();
@@ -252,12 +257,17 @@ function go(i) {
   if (s.cam) flyTo(s.cam, s.target);
   if (i > 0) junction.formation = 1; // jumping straight in: the halves are already joined
   s.enter?.();
-  if (embeddedLab) { $('prev').disabled = i === 4; $('next').disabled = i === 5; }
+  if (embeddedLab) {
+    $('prev').disabled = i === 4;
+    $('next').setAttribute('aria-label', i === 5 ? 'Continue to stage 3' : 'Next');
+    $('next').title = i === 5 ? 'Continue to stage 3: Breakdown' : 'Next';
+  }
 }
 $('next').addEventListener('click', () => go(index + 1));
 $('prev').addEventListener('click', () => go(index - 1));
 addEventListener('keydown', (e) => {
-  const typing = e.target.matches?.('input, textarea');
+  const typing = e.target.closest?.('input, textarea, select, [contenteditable="true"]');
+  if (typing || e.repeat) return;
   if (['ArrowRight', 'PageDown'].includes(e.key) || (e.key === ' ' && !e.target.matches?.('button')) || (e.key === 'ArrowDown' && !typing)) { e.preventDefault(); go(index + 1); }
   else if (['ArrowLeft', 'PageUp'].includes(e.key) || (e.key === 'ArrowUp' && !typing)) { if (typing && e.key === 'ArrowLeft') return; e.preventDefault(); go(index - 1); }
   else if (/^[1-9]$/.test(e.key) && !typing) go(Number(e.key) - 1);

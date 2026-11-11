@@ -292,6 +292,10 @@ function App() {
                 setExternalView(null);
                 go(-1);
               }}
+              onContinue={() => {
+                setExternalView(null);
+                go(2);
+              }}
             />
           )}
           <main
@@ -351,19 +355,12 @@ function App() {
                 animate={{ opacity: 1 }}
                 aria-labelledby="page-title"
               >
-                <span className="lesson-eyebrow">
-                  PN junction / Reverse bias
-                </span>
                 <h1 id="page-title">
                   Effect of Reverse Bias on the
                   <br className="desktop-break" /> Depletion Width and
                   Electric-Field Profile
                   <br className="desktop-break" /> of a PN Junction
                 </h1>
-                <p className="theory">
-                  An interactive study of depletion, electric fields, and
-                  junction breakdown.
-                </p>
               </motion.section>
             ) : (
               <LessonPanel
@@ -411,117 +408,107 @@ function App() {
               </motion.div>
             )}
           </main>
-          <footer
-            className="footer"
-            style={{ display: externalView ? "none" : undefined }}
-            inert={!!externalView}
-          >
-            <div className="footer-left">
-              {home ? (
-                <span>Depletion approximation · Silicon · 300 K</span>
-              ) : (
-                <>
+          {!home && (
+            <footer
+              className="footer"
+              style={{ display: externalView ? "none" : undefined }}
+              inert={!!externalView}
+            >
+              <div className="footer-left">
+                <button
+                  className="icon-button"
+                  aria-label="Previous stage"
+                  onClick={() => go(view - 1)}
+                >
+                  <ArrowLeft size={17} />
+                </button>
+                <span className="chapter-count">
+                  {String(stage + 1).padStart(2, "0")} <span>/ 04</span>
+                </span>
+              </div>
+              <nav className="stage-track" aria-label="Presentation chapters">
+                {chapters.map((chapter, i) => (
+                  <button
+                    key={i}
+                    onClick={() => go(i)}
+                    className={i === stage ? "current" : ""}
+                    aria-label={`Stage ${i + 1}: ${chapter.label}`}
+                    aria-current={i === stage ? "step" : undefined}
+                  >
+                    <span className="track-base" />
+                    <span
+                      className="track-fill"
+                      style={{
+                        width:
+                          i === stage
+                            ? `${frame.progress * 100}%`
+                            : i < stage
+                              ? "100%"
+                              : "0%",
+                      }}
+                    />
+                  </button>
+                ))}
+              </nav>
+              <div className="footer-right">
+                <div className="playback">
                   <button
                     className="icon-button"
-                    aria-label="Previous stage"
-                    onClick={() => go(view - 1)}
+                    onClick={() => setPlaying((p) => !p)}
+                    aria-label={
+                      playing ? "Pause animation" : "Play animation"
+                    }
+                    title={playing ? "Pause" : "Play"}
                   >
-                    <ArrowLeft size={17} />
+                    {playing ? <Pause size={14} /> : <Play size={14} />}
                   </button>
-                  <span className="chapter-count">
-                    {String(stage + 1).padStart(2, "0")} <span>/ 04</span>
-                  </span>
-                </>
-              )}
-            </div>
-            {!home ? (
-              <>
-                <nav className="stage-track" aria-label="Presentation chapters">
-                  {chapters.map((chapter, i) => (
-                    <button
-                      key={i}
-                      onClick={() => go(i)}
-                      className={i === stage ? "current" : ""}
-                      aria-label={`Stage ${i + 1}: ${chapter.label}`}
-                      aria-current={i === stage ? "step" : undefined}
-                    >
-                      <span className="track-base" />
-                      <span
-                        className="track-fill"
-                        style={{
-                          width:
-                            i === stage
-                              ? `${frame.progress * 100}%`
-                              : i < stage
-                                ? "100%"
-                                : "0%",
-                        }}
-                      />
-                    </button>
-                  ))}
-                </nav>
-                <div className="footer-right">
-                  <div className="playback">
-                    <button
-                      className="icon-button"
-                      onClick={() => setPlaying((p) => !p)}
-                      aria-label={
-                        playing ? "Pause animation" : "Play animation"
-                      }
-                      title={playing ? "Pause" : "Play"}
-                    >
-                      {playing ? <Pause size={14} /> : <Play size={14} />}
-                    </button>
-                    <button
-                      className="icon-button"
-                      onClick={() => {
-                        reset();
-                        setManualVoltage(null);
-                        setPlaying(true);
-                      }}
-                      aria-label="Replay stage animation"
-                      title="Replay"
-                    >
-                      <RotateCcw size={14} />
-                    </button>
-                    <button
-                      className="icon-button"
-                      onClick={() => {
-                        skip();
-                        setPlaying(true);
-                      }}
-                      aria-label="Skip to end of animation"
-                      title="Skip animation"
-                    >
-                      <SkipForward size={14} />
-                    </button>
-                    <button
-                      className="icon-button fullscreen-button"
-                      onClick={toggleFullscreen}
-                      aria-label={
-                        fullscreen ? "Exit full screen" : "Enter full screen"
-                      }
-                    >
-                      {fullscreen ? (
-                        <Minimize size={14} />
-                      ) : (
-                        <Maximize size={14} />
-                      )}
-                    </button>
-                  </div>
                   <button
-                    className="next-button"
-                    onClick={() => go(stage === 3 ? -1 : stage + 1)}
+                    className="icon-button"
+                    onClick={() => {
+                      reset();
+                      setManualVoltage(null);
+                      setPlaying(true);
+                    }}
+                    aria-label="Replay stage animation"
+                    title="Replay"
                   >
-                    {stage === 3 ? "Back to overview" : "Next"}
-                    <ArrowRight size={16} />
+                    <RotateCcw size={14} />
+                  </button>
+                  <button
+                    className="icon-button"
+                    onClick={() => {
+                      skip();
+                      setPlaying(true);
+                    }}
+                    aria-label="Skip to end of animation"
+                    title="Skip animation"
+                  >
+                    <SkipForward size={14} />
+                  </button>
+                  <button
+                    className="icon-button fullscreen-button"
+                    onClick={toggleFullscreen}
+                    aria-label={
+                      fullscreen ? "Exit full screen" : "Enter full screen"
+                    }
+                  >
+                    {fullscreen ? (
+                      <Minimize size={14} />
+                    ) : (
+                      <Maximize size={14} />
+                    )}
                   </button>
                 </div>
-              </>
-            ) : (
-              <span>Charge → field → potential</span>
-            )}
-          </footer>
+                <button
+                  className="next-button"
+                  onClick={() => go(stage === 3 ? -1 : stage + 1)}
+                >
+                  {stage === 3 ? "Back to overview" : "Next"}
+                  <ArrowRight size={16} />
+                </button>
+              </div>
+            </footer>
+          )}
           {fullError && (
             <div className="toast" role="status">
               {fullError}

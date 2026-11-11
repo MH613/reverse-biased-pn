@@ -33,7 +33,7 @@ test("copied bench accepts physical jack-to-jack wiring and inspect interactions
     }
   }
   await expect(f.locator('[data-r="supply"]')).toBeEnabled();
-  await expect(f.locator('[data-r="record"]')).toBeEnabled();
+  await expect(f.locator('[data-r="i"]')).not.toHaveText("—");
   await f.locator('[data-tool="inspect"]').click();
   const point = await f
     .locator("body")

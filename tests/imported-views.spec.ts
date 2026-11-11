@@ -47,7 +47,7 @@ test("header places lab left, presentation centered, and reading right without o
   await expect(page.locator("h1")).toHaveText("The equilibrium junction");
 });
 
-test("the exact reading-page body, figures, equations, quiz and open lab work locally", async ({
+test("the reader omits recap and keeps figures, equations and open lab working locally", async ({
   page,
 }) => {
   const failures: string[] = [];
@@ -60,14 +60,12 @@ test("the exact reading-page body, figures, equations, quiz and open lab work lo
   const f = page.frameLocator('iframe[title="Read as a page"]');
   await expect(f.locator(".katex")).not.toHaveCount(0);
   await expect(f.locator("#stage-eq canvas")).toHaveCount(1);
-  await expect(f.locator("main > section")).toHaveCount(7);
+  await expect(f.locator("main > section")).toHaveCount(6);
   await f.locator('.toc a[href="#graded"]').click();
   await expect(f.locator("#gvr")).toBeVisible();
   await f.locator("#gvr").fill("5");
   await expect(f.locator("#gvr-out")).toHaveText("5.00 V");
-  await f.locator('.toc a[href="#recap"]').click();
-  await f.locator("#quiz .q").first().locator("button").first().click();
-  await expect(f.locator("#quiz .why").first()).toContainText("Correct.");
+  await expect(f.locator('#recap, #quiz, .toc a[href="#recap"]')).toHaveCount(0);
   await f.locator('.toc a[href="#open-lab"]').click();
   await f.locator('#lab-open [data-r="auto"]').click();
   await expect(f.locator('#lab-open [data-r="supply"]')).toBeEnabled();
@@ -77,27 +75,11 @@ test("the exact reading-page body, figures, equations, quiz and open lab work lo
   await expect(page.locator("h1")).toContainText("Effect of Reverse Bias");
 });
 
-test("copied slide text, reader body, styling and simulation modules match the uploaded source", () => {
+test("unchanged styling, rendering and physics modules match the uploaded source", () => {
   const manifest = JSON.parse(
     readFileSync("docs/teammate-source.json", "utf8"),
   );
-  const hash = (s: string | Buffer) =>
-    createHash("sha256").update(s).digest("hex");
+  const hash = (s: Buffer) => createHash("sha256").update(s).digest("hex");
   for (const [name, sha] of Object.entries(manifest.exactFiles))
     expect(hash(readFileSync(`public/teammate/${name}`))).toBe(sha);
-  const page = readFileSync("public/teammate/guide/page.html", "utf8");
-  expect(hash(page.match(/<body[^>]*>([\s\S]*?)<\/body>/)![1])).toBe(
-    manifest.readerBody,
-  );
-  const presentation = readFileSync("public/teammate/guide/index.html", "utf8");
-  for (const scene of [4, 5])
-    expect(
-      hash(
-        presentation.match(
-          new RegExp(
-            `<article[^>]+data-scene="${scene}"[^>]*>([\\s\\S]*?)<\\/article>`,
-          ),
-        )![1],
-      ),
-    ).toBe(manifest.slides[scene]);
 });
