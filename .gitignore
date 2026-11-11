@@ -3,3 +3,6 @@ dist/
 *.tsbuildinfo
 test-results/
 playwright-report/
+
+# Generated from pinned npm dependencies before dev/build.
+public/teammate/vendor/

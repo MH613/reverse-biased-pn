@@ -1,0 +1,21 @@
+{
+  "source": "pn-junction-main.zip supplied by the user",
+  "exactFiles": {
+    "guide/css/guide.css": "642208e271e25c827f792d0d42c6b40e32208f8f466e3e3dd34871a167ae9413",
+    "guide/css/present.css": "f668df0709b3dc5dc64e8c75c6cd6ebca5703a8004c35a1879b51f80d2f3f8c3",
+    "guide/js/main.js": "15ccd73bf01daf4168328aeeeafdab73252405b14b228191f3ac32ec5b813705",
+    "guide/js/bench.js": "0549c9cadfb91c13d055add1de0d6321225455ebda6cc27bb6ab704e84f48cad",
+    "guide/js/lab.js": "26327254a1bdfeeeecdde20b59f75011c385299c6a77fd3f34072112ba836606",
+    "guide/js/device.js": "315de01d2049a9b0733b5f781e6d4b8085c7f4a01cf736aaa91d8c98d26aec18",
+    "guide/js/figures.js": "2a3dea592a7348e0ce5f05cf5356e0c204e7844a604fa7e3849eb01e9cb86b4b",
+    "guide/js/junction-line.js": "a7f1f95ade52014ae1fd39caacab517ccd531615e81b521b7f33d4117bcf36fc",
+    "guide/js/lineart.js": "050012990e1de6d0522b6a44b14de7e38c8a08ff7aef544989b7a12e2f3a5433",
+    "js/physics.js": "1d8fe82a1e65b9b2c583f8b703196aaf192859c5d24b3c678e9529d2f7b88f78",
+    "xr/js/model.js": "03e350482a763b625fe17a4e0ad98ebd08fd0eb50207c9137ed1f304b1d1a2f6"
+  },
+  "readerBody": "61399c0c918d547feb08cc442526fa59b289a40605f81fc36a7096739d4bc78c",
+  "slides": {
+    "4": "b1089331e7b9237c52640aeb282e611f14c2a6e82eb1caa5c5d6bc722b87653c",
+    "5": "8a9e7fb67210d6c3ab5ced182d57fbb8eca00380ea7f8dd74167ebad8e3aba49"
+  }
+}

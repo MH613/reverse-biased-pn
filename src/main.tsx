@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import {
+  BookOpen,
   ArrowLeft,
   ArrowRight,
   ArrowUpRight,
@@ -16,11 +17,7 @@ import {
 } from "lucide-react";
 import { LessonPanel } from "./presentation/LessonPanel";
 import { Junction } from "./components/Junction";
-import {
-  Laboratory,
-  createLabSession,
-  type LabSession,
-} from "./lab/Laboratory";
+import { ImportedView, type ImportedMode } from "./imported/ImportedView";
 import {
   type BiasMode,
   PresentationContext,
@@ -50,9 +47,9 @@ function App() {
   );
   const [manualVoltage, setManualVoltage] = useState<number | null>(null),
     [selected, setSelected] = useState<string | null>(null);
-  const [labLeaving, setLabLeaving] = useState(false);
-  const [labOpen, setLabOpen] = useState(false),
-    [fullscreen, setFullscreen] = useState(false),
+  const [externalView, setExternalView] = useState<ImportedMode | null>(null);
+  const importedOpen = externalView !== null;
+  const [fullscreen, setFullscreen] = useState(false),
     [fullError, setFullError] = useState("");
   const [reducedMotion, setReducedMotion] = useState(
     () => matchMedia("(prefers-reduced-motion: reduce)").matches,
@@ -77,7 +74,7 @@ function App() {
     bias,
     manualVoltage,
     reducedMotion,
-    !labOpen,
+    !importedOpen,
   );
   const navigationLock = useRef(0),
     touchStart = useRef<{ x: number; y: number } | null>(null);
@@ -108,8 +105,7 @@ function App() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (
-        labOpen ||
-        labLeaving ||
+        importedOpen ||
         (e.target as HTMLElement).closest(
           'input,textarea,select,[contenteditable="true"],[role="tooltip"],.model-details',
         )
@@ -137,8 +133,7 @@ function App() {
       wheelEnd = 0;
     const onWheel = (e: WheelEvent) => {
       if (
-        labOpen ||
-        labLeaving ||
+        importedOpen ||
         e.ctrlKey ||
         (e.target as HTMLElement).closest(
           'input,[role="dialog"],.model-details',
@@ -170,7 +165,7 @@ function App() {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("wheel", onWheel);
     };
-  }, [labOpen, labLeaving]);
+  }, [importedOpen]);
   useEffect(() => {
     const onChange = () => setFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", onChange);
@@ -184,33 +179,14 @@ function App() {
       setFullError("Full screen is unavailable in this browser.");
     }
   };
-  const labSession = useRef<LabSession | null>(null);
-  if (!labSession.current) labSession.current = createLabSession();
-  const saveLabSession = useCallback((session: LabSession) => {
-    labSession.current = session;
-  }, []);
   useEffect(() => {
-    if (!labOpen && !labLeaving) return;
+    if (!importedOpen) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previous;
     };
-  }, [labOpen, labLeaving]);
-  const restoreLabFocus = useRef(false);
-  useEffect(() => {
-    if (restoreLabFocus.current && !labOpen && !labLeaving) {
-      restoreLabFocus.current = false;
-      document
-        .querySelector<HTMLButtonElement>(".lab-button")
-        ?.focus({ preventScroll: true });
-    }
-  }, [labOpen, labLeaving]);
-  const closeLab = useCallback(() => {
-    restoreLabFocus.current = true;
-    setLabLeaving(true);
-    setLabOpen(false);
-  }, []);
+  }, [importedOpen]);
   const handleVoltage = (voltage: number) => {
     setManualVoltage(voltage);
     setPlaying(true);
@@ -248,7 +224,7 @@ function App() {
                 ? 35
                 : 160
               : depletionWidth(stage, frame.progress, frame.voltage, bias),
-          playing: playing && !labOpen,
+          playing: playing && !importedOpen,
           bias,
           reducedMotion,
           lesson: true,
@@ -257,56 +233,71 @@ function App() {
       >
         <motion.div
           initial={false}
-          animate={{ opacity: labOpen ? 0 : 1 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: motionTiming.view, ease: easeOut }}
-          className={`app-shell ${home ? "is-home" : "is-presentation"}`}
-          aria-hidden={labOpen || labLeaving}
-          style={{ pointerEvents: labOpen || labLeaving ? "none" : undefined }}
-          inert={labOpen || labLeaving}
+          className={`app-shell ${externalView ? "is-imported" : home ? "is-home" : "is-presentation"}`}
         >
           <header className="header">
-            <a
-              className="brand"
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                go(-1);
-              }}
-              aria-label="Junction home"
+            <button
+              className="lab-button header-action"
+              aria-pressed={externalView === "lab"}
+              onClick={() => setExternalView("lab")}
             >
-              <span className="brand-mark">
-                <i />
-                <i />
-              </span>
-              junction.
-            </a>
+              <FlaskConical size={15} /> Laboratory <ArrowUpRight size={13} />
+            </button>
             <nav className="header-nav" aria-label="Main navigation">
               <button
-                className={home ? "active" : ""}
-                aria-current={home ? "page" : undefined}
-                onClick={() => go(-1)}
+                className={!externalView && home ? "active" : ""}
+                aria-current={!externalView && home ? "page" : undefined}
+                onClick={() => {
+                  setExternalView(null);
+                  go(-1);
+                }}
               >
                 Overview
               </button>
               <button
-                className={!home ? "active" : ""}
-                aria-current={!home ? "page" : undefined}
-                onClick={() => go(0)}
+                className={!externalView && !home ? "active" : ""}
+                aria-current={!externalView && !home ? "page" : undefined}
+                onClick={() => {
+                  setExternalView(null);
+                  go(0);
+                }}
               >
                 The explanation <ArrowUpRight size={12} />
               </button>
             </nav>
-            <button className="lab-button" onClick={() => setLabOpen(true)}>
-              <FlaskConical size={15} /> Laboratory <ArrowUpRight size={13} />
+            <button
+              className="read-button header-action"
+              aria-pressed={externalView === "read"}
+              onClick={() => setExternalView("read")}
+            >
+              <BookOpen size={15} /> Read as a page <ArrowUpRight size={13} />
             </button>
           </header>
           <p className="sr-only" role="status" aria-atomic="true">
-            {home
-              ? "Overview: The PN junction."
-              : `Stage ${stage + 1} of 4: ${chapters[stage].label}`}
+            {externalView
+              ? externalView === "lab"
+                ? "Laboratory: The question and measurement."
+                : "Read as a page."
+              : home
+                ? "Overview: The PN junction."
+                : `Stage ${stage + 1} of 4: ${chapters[stage].label}`}
           </p>
+          {externalView && (
+            <ImportedView
+              key={externalView}
+              mode={externalView}
+              onOverview={() => {
+                setExternalView(null);
+                go(-1);
+              }}
+            />
+          )}
           <main
             className="presentation"
+            style={{ display: externalView ? "none" : undefined }}
+            inert={!!externalView}
             data-stage={home ? "intro" : stage}
             data-wide={wide}
             onTouchStart={(e) => {
@@ -420,7 +411,11 @@ function App() {
               </motion.div>
             )}
           </main>
-          <footer className="footer">
+          <footer
+            className="footer"
+            style={{ display: externalView ? "none" : undefined }}
+            inert={!!externalView}
+          >
             <div className="footer-left">
               {home ? (
                 <span>Depletion approximation · Silicon · 300 K</span>
@@ -536,19 +531,6 @@ function App() {
             </div>
           )}
         </motion.div>
-        <AnimatePresence
-          onExitComplete={() => {
-            setLabLeaving(false);
-          }}
-        >
-          {labOpen && (
-            <Laboratory
-              onClose={closeLab}
-              initial={labSession.current}
-              onSessionChange={saveLabSession}
-            />
-          )}
-        </AnimatePresence>
       </PresentationContext.Provider>
     </MotionConfig>
   );

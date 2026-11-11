@@ -1,5 +1,7 @@
 # Silicon junction model
 
+> The original laboratory model below is retained as reference code. The public Laboratory button now opens the teammate’s copied exercise, with its own original model. See `teammate-import.md`. Presentation electrostatics remain documented in the revised presentation models section.
+
 The laboratory solves a **uniformly doped, abrupt, one-dimensional silicon PN junction** under the depletion approximation. It is a quasistatic, long-base, ideal diffusion-current model at fixed temperature, with fully ionized dopants and nondegenerate Boltzmann statistics. It does not simulate breakdown, tunnelling, generation/recombination leakage in the space-charge region, surface leakage, self-heating, series resistance, capacitive displacement current, or a transient drift–diffusion PDE.
 
 ## Fixed parameters

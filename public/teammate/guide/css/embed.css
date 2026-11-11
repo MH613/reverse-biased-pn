@@ -1,0 +1,16 @@
+/* Host navigation replaces the duplicate brand and reading link. */
+.embedded-lab .p-top .logo, .embedded-lab .p-top .read { display: none; }
+.embedded-lab .p-top { justify-content: center; }
+.embedded-lab .p-top .legend { margin: 0; }
+.embedded-lab .p-nav button:disabled { opacity: .3; cursor: default; }
+/* Keep the original content usable when the host viewport is narrow. */
+@media(max-width:1050px) {
+ .embedded-lab body { overflow: auto; height: auto; min-height: 100vh; display: flex; flex-direction: column; }
+ .embedded-lab body.on-bench .cards { position: relative; order: 0; left: auto; right: auto; top: auto; bottom: auto; transform: none; width: auto; margin: 56px 16px 0; }
+ .embedded-lab .card-s { display: none; }
+ .embedded-lab .card-s.on { display: block; position: relative; top: auto; bottom: auto; transform: none; }
+ .embedded-lab .bench-layer { position: relative; order: 1; inset: auto; margin: 18px 8px 70px; height: auto; }
+ .embedded-lab .bench-layer .lab { height: auto; }
+ .embedded-lab .bench-layer .bench { height: 440px; min-height: 440px; }
+ .embedded-lab .bench-layer .lab-side { overflow: visible; }
+}

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>junction. · reverse bias</title>
+  <meta name="description" content="A fly-through of a reverse-biased PN junction: the depletion region, its field, a circuit you measure, breakdown, the graded junction and AR." />
+  <link rel="icon" href="../xr/assets/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../vendor/plex.css" />
+  <link rel="stylesheet" href="../vendor/katex/katex.min.css" />
+  <link rel="stylesheet" href="css/guide.css" />
+  <link rel="stylesheet" href="css/present.css" />
+  <script type="importmap">
+    { "imports": { "three": "../vendor/three/build/three.module.js", "three/addons/": "../vendor/three/examples/jsm/" } }
+  </script>
+  <script defer src="../vendor/katex/katex.min.js"></script>
+  <script defer src="../vendor/katex/contrib/auto-render.min.js"></script>
+  <script src="../vendor/qrcode.js" defer></script>
+<script>if(new URLSearchParams(location.search).get("embedded")==="lab")document.documentElement.classList.add("embedded-lab");</script>
+  <link rel="stylesheet" href="css/embed.css" />
+</head>
+<body class="present">
+  <script>window.__errors = []; addEventListener("error", (e) => window.__errors.push(String(e.message) + " @ " + (e.filename || "") + ":" + (e.lineno || "")));</script>
+  <div id="world" class="world" aria-hidden="true"></div>
+
+  <!-- the bench, full screen, for the question and the measurement -->
+  <div class="bench-layer" id="bench-layer">
+    <div class="lab" id="lab-present">
+      <div class="bench stage3d" role="application" aria-label="Circuit bench in 3D"></div>
+      <aside class="lab-side"></aside>
+    </div>
+  </div>
+
+  <header class="p-top">
+    <span class="logo">junction<span>.</span></span>
+    <ul class="legend" aria-label="Colour key">
+      <li class="c-hole">○ hole</li><li class="c-electron">● electron</li><li class="c-ion">⊞ fixed ion</li><li class="c-field">→ field E</li><li class="c-current">I current</li>
+    </ul>
+    <a class="read" href="page.html">Read as a page →</a>
+  </header>
+
+  <!-- one card per scene; only the current one shows -->
+  <div class="cards">
+    <article class="card-s" data-scene="0">
+      <h1>Reverse bias,<br />drawn out.</h1>
+      <p class="lede">Two pieces of silicon, one battery. Watch what a reverse voltage does inside a PN junction.</p>
+      <p class="hint">Press <kbd>→</kbd> or <kbd>space</kbd></p>
+    </article>
+    <article class="card-s" data-scene="1">
+      <p class="num">01 · Equilibrium</p>
+      <h2>Where p meets n, the carriers disappear.</h2>
+      <p><b class="c-hole">Holes</b> and <b class="c-electron">electrons</b> diffuse across and recombine. They leave <b class="c-ion">fixed ions</b> uncovered: the <b class="c-ion">depletion region</b>.</p>
+      <div class="formula">$$V_{bi}=\frac{kT}{q}\ln\frac{N_AN_D}{n_i^2}=0.714\ \text{V}$$</div>
+    </article>
+    <article class="card-s" data-scene="2">
+      <p class="num">02 · ρ → E → V</p>
+      <h2>Charge makes the field. The field makes the voltage.</h2>
+      <p><b class="c-ion">ρ</b>: −qN<sub>A</sub>, then +qN<sub>D</sub>. Integrate (Gauss): <b class="c-field">E</b> is a triangle, largest at the junction, pointing n → p. Integrate again: <b class="c-potential">V</b> climbs by V<sub>bi</sub>.</p>
+      <div class="formula">$$E_{max}=\frac{qN_Ax_p}{\varepsilon_s}\qquad V_{bi}+V_R=\tfrac12E_{max}W$$</div>
+    </article>
+    <article class="card-s" data-scene="3">
+      <p class="num">03 · Reverse bias</p>
+      <h2>Pull the junction apart.</h2>
+      <p>p to −, n to +. The battery pulls the carriers away, more ions are uncovered, W widens and the field grows.</p>
+      <div class="formula">$$W\propto\sqrt{V_{bi}+V_R}\qquad E_{max}=\frac{2(V_{bi}+V_R)}{W}$$</div>
+      <dl class="live"><div><dt class="c-current">V<sub>R</sub></dt><dd id="p-vr">0.0 V</dd></div><div><dt class="c-ion">W</dt><dd id="p-w">—</dd></div><div><dt class="c-field">E<sub>max</sub></dt><dd id="p-e">—</dd></div></dl>
+    </article>
+    <article class="card-s side" data-scene="4">
+      <p class="num">04 · The question</p>
+      <h2>Is a current flowing?</h2>
+      <div class="vote" role="group" aria-label="Your guess">
+        <button data-guess="none">No, none</button>
+        <button data-guess="tiny">A tiny one</button>
+        <button data-guess="normal">Yes, a normal one</button>
+      </div>
+      <div id="q-next" hidden>
+        <p>Find out. <b>Put the ammeter in series</b>: unplug a cable and run the loop through IN and OUT.</p>
+        <button class="btn" id="p-add-ammeter">Bring the ammeter</button>
+      </div>
+    </article>
+    <article class="card-s side" data-scene="5">
+      <p class="num">05 · Measure it</p>
+      <h2 id="m-title">Turn the supply up.</h2>
+      <p id="m-text">Read the ammeter as the voltage rises.</p>
+      <p class="bd-note"><b class="c-current">Then keep going past ~103 V:</b> the peak field reaches E<sub>crit</sub> and the avalanche starts. Breakdown.</p>
+    </article>
+    <article class="card-s" data-scene="6">
+      <p class="num">06 · Beyond the step</p>
+      <h2>A graded junction bends the triangle.</h2>
+      <p>Doping that changes linearly, N<sub>D</sub> − N<sub>A</sub> = a·x: <b class="c-ion">ρ</b> becomes a ramp, <b class="c-field">E</b> a parabola, and W grows more slowly.</p>
+      <div class="formula">$$W_{abrupt}\propto V^{1/2}\qquad W_{graded}\propto V^{1/3}$$</div>
+    </article>
+    <article class="card-s" data-scene="7">
+      <p class="num">07 · Take it with you</p>
+      <h2>Now hold it in your hands.</h2>
+      <p>Scan, allow the camera, point at the card. The junction stands on it.</p>
+      <div class="ar-pair"><div class="qr"><canvas id="qr" width="232" height="232" aria-label="QR code to the AR page"></canvas><span>scan</span></div><img class="card" src="../xr/assets/card.png" alt="AR card" /></div>
+    </article>
+    <article class="card-s" data-scene="8">
+      <p class="num">08</p>
+      <h1>That's the junction.</h1>
+      <p class="lede">Charge sets the field, voltage stretches it, a tiny current proves it, the field limits it.</p>
+      <div class="row"><a class="btn" href="page.html">Read it all as a page →</a><a class="btn ghost" href="page.html#open-lab">Open lab</a></div>
+    </article>
+  </div>
+
+  <nav class="p-nav" aria-label="Scenes">
+    <button id="prev" aria-label="Previous">←</button>
+    <ol id="dots"></ol>
+    <button id="next" aria-label="Next">→</button>
+  </nav>
+
+  <script type="module" src="js/present.js"></script>
+</body>
+</html>

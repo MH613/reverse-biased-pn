@@ -680,8 +680,8 @@ export function LessonPanel({
           <p>
             Band diagram: Eɡ = 1.12 eV, Eꜰᴘ = 0 eV; Eꜰɴ = −qVᴿ. Dashed levels
             are shown only in the neutral regions. Full transport and
-            quasi-Fermi profiles are not solved. The laboratory retains its
-            separately documented asymmetric junction.
+            quasi-Fermi profiles are not solved. The imported laboratory uses
+            its own documented parameters and current model.
           </p>
           <p>
             Source: Donald A. Neamen,{" "}
