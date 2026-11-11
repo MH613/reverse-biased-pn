@@ -78,7 +78,7 @@ export function createLab(root, { mode = 'open', recording = true, onStep = () =
     r('iv').remove();
     r('record').remove();
   }
-  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const css = (n) => `var(${n})`;
   const host = root.querySelector('.bench');
   const guided = mode === 'guided';
   const bench = createBench(host, { parts: guided ? ['supply', 'diode'] : ['supply', 'ammeter', 'diode'] });
@@ -115,7 +115,7 @@ export function createLab(root, { mode = 'open', recording = true, onStep = () =
     chart.text(4, 4e-15, 'ideal (Shockley) diode', { fill: css('--hair'), 'font-size': 11 });
     chart.text(4, 2e-10, 'real silicon: generation in W', { fill: css('--c-current'), 'font-size': 11 });
     chart.text(VBR - 3, 3e-6, `breakdown ${VBR.toFixed(0)} V`, { fill: css('--c-current'), 'font-size': 11, 'text-anchor': 'end' });
-    for (const p of state.points) chart.dot(p.v, p.i, { fill: '#fff', stroke: css('--ink'), 'stroke-width': 1.5, r: 3.5 });
+    for (const p of state.points) chart.dot(p.v, p.i, { fill: 'var(--paper)', stroke: css('--ink'), 'stroke-width': 1.5, r: 3.5 });
     const c = state.circuit;
     if (c.valid && c.reverse && c.hasAmmeter && state.op) chart.dot(-state.op.V, Math.abs(state.op.total), { fill: css('--c-current'), r: 5 });
   }

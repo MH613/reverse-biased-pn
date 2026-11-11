@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { readerRevision } from "./readerRevision";
+import { guideRevision } from "./guideRevision";
 export type ImportedMode = "lab" | "read";
 export function ImportedView({
   mode,
@@ -47,7 +47,7 @@ export function ImportedView({
   const source =
     mode === "lab"
       ? "index.html?embedded=lab&scene=5"
-      : `page.html?v=${readerRevision}`;
+      : "page.html";
   return (
     <section
       className="imported-view"
@@ -61,7 +61,7 @@ export function ImportedView({
       <iframe
         ref={iframe}
         title={mode === "lab" ? "Question and laboratory" : "Read as a page"}
-        src={`${import.meta.env.BASE_URL}teammate/guide/${source}`}
+        src={`${import.meta.env.BASE_URL}teammate/guide-${guideRevision}/${source}`}
         allow="fullscreen; camera; xr-spatial-tracking"
         onLoad={(event) => {
           setLoaded(true);

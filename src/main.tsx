@@ -30,6 +30,7 @@ import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-600.css";
 import "./style.css";
 import "./presentation/presentation.css";
+import "./theme.css";
 import { motionTiming, easeOut } from "./motion";
 
 const inspection: Record<string, string> = {

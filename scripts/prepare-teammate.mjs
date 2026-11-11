@@ -1,5 +1,5 @@
 // Serve the copied app's pinned dependencies locally, with their original fonts.
-import { copyFile, mkdir, readFile, writeFile, cp } from "node:fs/promises";
+import { copyFile, mkdir, readFile, writeFile, cp, readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
 const root = path.resolve("node_modules"),
@@ -74,13 +74,24 @@ for (const [family, styles] of [
   );
 }
 await writeFile(path.join(out, "plex.css"), fonts);
-// A changed reader must have a new URL, even while the old HTML remains cached.
-const readerRevision = createHash("sha256")
-  .update(await readFile("public/teammate/guide/page.html"))
-  .digest("hex")
-  .slice(0, 12);
+// Version the complete imported guide, including its CSS and module imports.
+const guideHash = createHash("sha256");
+async function hashGuide(dir) {
+  for (const entry of (await readdir(dir, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name))) {
+    const file = path.join(dir, entry.name);
+    if (entry.isDirectory()) await hashGuide(file);
+    else guideHash.update(file).update(await readFile(file));
+  }
+}
+await hashGuide("public/teammate/guide");
+const guideRevision = guideHash.digest("hex").slice(0, 12);
+for (const entry of await readdir("public/teammate")) {
+  if (/^guide-[a-f0-9]{12}$/.test(entry))
+    await rm(path.join("public/teammate", entry), { recursive: true });
+}
+await cp("public/teammate/guide", `public/teammate/guide-${guideRevision}`, { recursive: true });
 await writeFile(
-  "src/imported/readerRevision.ts",
-  `export const readerRevision = ${JSON.stringify(readerRevision)};\n`,
+  "src/imported/guideRevision.ts",
+  `export const guideRevision = ${JSON.stringify(guideRevision)};\n`,
 );
 console.log("Prepared teammate renderer, equation fonts, and typefaces.");

@@ -1,0 +1,35 @@
+/* Keep the imported technical drawings readable in either device theme. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --paper: #171a1f;
+    --white: #22272f;
+    --ink: #e3e6eb;
+    --ink-2: #bcc4d0;
+    --ink-3: #9ba6b6;
+    --hair: #95a1b2;
+    --rule: #3b4553;
+    --line-2: #626f82;
+    --fill: #2d3540;
+    --c-hole: #ed8e9e;
+    --c-electron: #83b1f3;
+    --c-ion: #e1b358;
+    --c-field: #6dcdb2;
+    --c-potential: #bd9be9;
+    --c-current: #f3a474;
+    --p-fill: #433039;
+    --n-fill: #2b3b51;
+    --depletion-fill: #443b29;
+  }
+  body.present { background: var(--paper); }
+  .top { background: #171a1ff2; }
+  .card-s { background: #1e232bea; }
+  .vote button, .p-nav button { background: var(--white); }
+  .vote button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
+  .tools button[aria-pressed='true'] span { color: #495465; }
+  .btn:hover { background: #fff; color: var(--paper); }
+  .btn.ghost:hover { background: #303946; color: var(--ink); }
+  .qr { background: #fff; color: #333; }
+  .qr canvas, .ar-pair .card { background: #fff; }
+  ::selection { background: #49536a; color: #fff; }
+}

@@ -18,7 +18,7 @@ export function el(tag, attrs = {}, parent = null) {
   if (parent) parent.appendChild(node);
   return node;
 }
-const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const css = (name) => `var(${name})`;
 
 /** Deterministic pseudo-random numbers, so the drawing is the same on every visit. */
 function random(seed) {
@@ -58,14 +58,14 @@ export class BarFigure {
     const bottom = top + height;
 
     // regions
-    this.pRect = el('rect', { x: X0, y: top, width: MID - X0, height, fill: '#fff5f8', stroke: css('--line-2') }, this.pGroup);
-    this.nRect = el('rect', { x: MID, y: top, width: X1 - MID, height, fill: '#f3f8fe', stroke: css('--line-2') }, this.nGroup);
+    this.pRect = el('rect', { x: X0, y: top, width: MID - X0, height, fill: 'var(--p-fill, #fff5f8)', stroke: css('--line-2') }, this.pGroup);
+    this.nRect = el('rect', { x: MID, y: top, width: X1 - MID, height, fill: 'var(--n-fill, #f3f8fe)', stroke: css('--line-2') }, this.nGroup);
     el('text', { x: X0 + 10, y: top + 18, 'font-size': 13, 'font-weight': 600, fill: css('--hole') }, this.pGroup).textContent = 'p-type';
     const nText = el('text', { x: X1 - 10, y: top + 18, 'font-size': 13, 'font-weight': 600, 'text-anchor': 'end', fill: css('--electron') }, this.nGroup);
     nText.textContent = 'n-type';
 
     // depletion region (drawn over both halves)
-    this.depletion = el('rect', { y: top + 0.5, height: height - 1, fill: '#fffbf2', stroke: css('--ion'), 'stroke-dasharray': '4 4', 'stroke-width': 1 }, g);
+    this.depletion = el('rect', { y: top + 0.5, height: height - 1, fill: 'var(--depletion-fill, #fffbf2)', stroke: css('--ion'), 'stroke-dasharray': '4 4', 'stroke-width': 1 }, g);
     this.ionLayer = el('g', {}, g);
     this.arrowLayer = el('g', {}, g);
     this.carrierLayer = el('g', {}, g);
@@ -97,7 +97,7 @@ export class BarFigure {
       const x = hole ? X0 + 8 + rand() * (MID - X0 - 12) : MID + 4 + rand() * (X1 - MID - 12);
       const y = top + 12 + rand() * (height - 22);
       const node = hole
-        ? el('circle', { r: 4.2, fill: '#fff', stroke: css('--hole'), 'stroke-width': 1.6 }, this.carrierLayer)
+        ? el('circle', { r: 4.2, fill: 'var(--paper)', stroke: css('--hole'), 'stroke-width': 1.6 }, this.carrierLayer)
         : el('circle', { r: 3.4, fill: css('--electron') }, this.carrierLayer);
       this.carriers.push({ node, x, y, hole, phase: rand() * 100, keep: rand(), shown: 1 });
     }
@@ -118,7 +118,7 @@ export class BarFigure {
 
   terminal(x, y, sign, parent) {
     const t = el('g', {}, parent);
-    el('circle', { cx: x, cy: y, r: 9, fill: '#fff', stroke: css('--ink'), 'stroke-width': 1.2 }, t);
+    el('circle', { cx: x, cy: y, r: 9, fill: 'var(--paper)', stroke: css('--ink'), 'stroke-width': 1.2 }, t);
     const s = el('text', { x, y: y + 4.5, 'font-size': 14, 'text-anchor': 'middle', 'font-weight': 700, fill: css('--ink') }, t);
     s.textContent = sign;
     return t;

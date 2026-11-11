@@ -1,0 +1,128 @@
+/* The device theme changes presentation colors without changing the physics. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    color: #e3e6eb;
+    background: #171a1f;
+    --p-ink: #d99c96;
+    --n-ink: #8ab7dc;
+    --p-surface: #493539;
+    --n-surface: #304655;
+    --p-depth: #392a2e;
+    --n-depth: #263946;
+    --depletion-surface: #403c49;
+    --trace-ink: #b09ac9;
+    --trace-line: #b09ac9;
+    --trace-highlight: #d8c3ee;
+    --ink: #e3e6eb;
+    --muted: #aeb6c3;
+    --line: #373e49;
+  }
+  ::selection { background: #49536a; color: #fff; }
+  .app-shell, .footer, .imported-view iframe, .imported-loading {
+    background: #171a1f;
+  }
+  button:hover { color: #d6dce6; }
+  .header-nav { background: #22272f; }
+  .header-nav button { color: #aeb6c3; }
+  .header-nav button.active {
+    background: #363e49;
+    color: #f1f3f6;
+  }
+  .header-action { border-color: #3d4551; }
+  .header-action[aria-pressed="true"] {
+    background: #2b323c;
+    border-color: #667283;
+  }
+  .primary-button { background: #e1e5eb; color: #1b1e24; }
+  .primary-button:hover { background: #fff; color: #171a1f; }
+  .theory, .scroll-hint, .bias-control button,
+  .voltage-control label, .voltage-control output span, .range-ends,
+  .inspection p, .inspection button, .footer, .icon-button,
+  .lesson-eyebrow, .lesson-theory, .model-info-button,
+  .scene-summary, .lesson-metrics small, .dashboard-caption,
+  .mechanism-note p, .mechanism-limit, .model-details p,
+  .equation-note, .graded-comparison, .imported-loading { color: #aeb6c3; }
+  .bias-control button[aria-pressed="true"] {
+    color: #edf0f5;
+    border-color: #c0c9d7;
+  }
+  .chapter-count, .next-button, .scene-summary > strong,
+  .lesson-metrics strong, .full-equations, .display-equation { color: #e3e6eb; }
+  .chapter-count > span { color: #929cab; }
+  .icon-button:hover { color: #f1f3f6; background: #2b323c; }
+  .track-base { background: #373e49; }
+  .track-fill, .current .track-base { background: #737f90; }
+  .current .track-fill { background: #d9e0eb; }
+  .variable > button, .model-info-button { border-color: #697585; }
+  .variable-tooltip, .model-details, .inspection {
+    background: #252b34;
+    color: #e3e6eb;
+    border-color: #4b5564;
+    box-shadow: 0 12px 36px #0005;
+  }
+  .mechanism-note { background: #22272f; }
+  .dashboard-caption input { accent-color: #bba2d6; }
+  input[type="range"] { background: #4b5564; accent-color: #dce3ed; }
+  input[type="range"]::-webkit-slider-thumb {
+    background: #dce3ed;
+    border-color: #171a1f;
+    box-shadow: 0 0 0 1px #8894a5;
+  }
+  input[type="range"]::-moz-range-thumb {
+    background: #dce3ed;
+    border-color: #171a1f;
+  }
+  .profile-card[data-profile] {
+    --trace-line: #b09ac9;
+    --trace-highlight: #d8c3ee;
+    color: #e0e4ec;
+    background: #22272f;
+    border-color: #3a424f;
+  }
+  .profile-card[data-profile] .card-heading > span,
+  .profile-card[data-profile] .card-caption { color: #b0b9c8; }
+  .profile-card[data-profile] .graph-grid { stroke: #434d5d; }
+  .profile-card[data-profile] .graph-zero { stroke: #8791a2; }
+  .profile-card[data-profile] .graph-ticks { fill: #b0b9c8; }
+  .profile-card[data-profile] .graph-boundary { stroke: #8f839d; }
+  .profile-card[data-profile] .profile-reference { stroke: #7f8796; }
+  .profile-card[data-profile] .fermi-line { stroke: #a4a0b3; }
+  .profile-card[data-profile] .band-labels { fill: #d2d8e3; }
+  .svg-hit-regions polygon:hover { fill: #ffffff09; }
+  .svg-hit-regions polygon:focus-visible { stroke: #e3e6eb; }
+}
+
+@media (prefers-color-scheme: dark) {
+  .junction-illustration [fill="#eaeaea"] { fill: #303741; }
+  .junction-illustration [fill="#f1f1f1"] { fill: #373f4a; }
+  .junction-illustration [fill="#f4f4f4"] { fill: #3d4652; }
+  .junction-illustration [fill="#e4e4e4"] { fill: #56616e; }
+  .junction-illustration [fill="#dbdbdb"] { fill: #6b7583; }
+  .junction-illustration [fill="#f8f8f8"] { fill: #343a44; }
+  .junction-illustration [fill="#ffffff"] { fill: #28303a; }
+  .junction-illustration [fill="#f7f7f7"] { fill: #444e5a; }
+  .junction-illustration [fill="#848484"] { fill: #c1c8d2; }
+  .junction-illustration [fill="#555555"] { fill: #d6dde7; }
+  .junction-illustration [fill="#fafafa"] { fill: #3b4551; }
+  .junction-illustration [fill="#eeeeee"] { fill: #272f39; }
+  .junction-illustration [fill="#f6f6f6"] { fill: #343e4a; }
+  .junction-illustration [fill="#bbbbbb"] { fill: #8d98a8; }
+  .junction-illustration [fill="#777777"] { fill: #bbc5d3; }
+  .junction-illustration [stroke="#cdcdcd"] { stroke: #5b6572; }
+  .junction-illustration [stroke="#bdbdbd"] { stroke: #747f8e; }
+  .junction-illustration [stroke="#828282"] { stroke: #9daaba; }
+  .junction-illustration [stroke="#7f7f7f"] { stroke: #9daaba; }
+  .junction-illustration [stroke="#e7e7e7"] { stroke: #4b5666; }
+  .junction-illustration [stroke="#989898"] { stroke: #8d99a8; }
+  .junction-illustration [stroke="#959595"] { stroke: #9ba6b5; }
+  .junction-illustration [stroke="#6a6a6a"] { stroke: #a0adbe; }
+  .junction-illustration [stroke="#b2b2b2"] { stroke: #778394; }
+  .junction-illustration [stroke="#ffffff"] { stroke: #28303a; }
+  .junction-illustration [stroke="#8f8f8f"] { stroke: #a2adbd; }
+  .junction-illustration [stroke="#444"] { stroke: #c1cbd8; }
+  .junction-illustration [stroke="#999999"] { stroke: #8793a5; }
+  .junction-illustration [stroke="#888888"] { stroke: #9ba8ba; }
+  .junction-illustration [stroke="#777777"] { stroke: #a0adbe; }
+  .junction-illustration [stroke="#bbbbbb"] { stroke: #717e91; }
+}

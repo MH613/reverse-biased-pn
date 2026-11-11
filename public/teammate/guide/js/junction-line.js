@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { C, solid, label } from './lineart.js';
 import { SLAB, INNER_HALF, layout, particleSites } from '../../xr/js/model.js';
+import { themeColor, onThemeChange } from './theme.js';
 
 const { length: LEN, height: H, depth: D, contact: CT } = SLAB;
 const hex = (n) => `#${n.toString(16).padStart(6, '0')}`;
@@ -17,20 +18,26 @@ function markerTexture(kind, color) {
   const c = document.createElement('canvas');
   c.width = c.height = 64;
   const g = c.getContext('2d');
-  g.strokeStyle = g.fillStyle = color;
-  g.lineWidth = 7;
-  if (kind === 'ring') { g.beginPath(); g.arc(32, 32, 22, 0, Math.PI * 2); g.stroke(); }
-  if (kind === 'dot') { g.beginPath(); g.arc(32, 32, 20, 0, Math.PI * 2); g.fill(); }
-  if (kind === 'minus' || kind === 'plus') {
-    g.lineWidth = 5;
-    g.strokeRect(9, 9, 46, 46);
-    g.lineWidth = 7;
-    g.beginPath(); g.moveTo(20, 32); g.lineTo(44, 32);
-    if (kind === 'plus') { g.moveTo(32, 20); g.lineTo(32, 44); }
-    g.stroke();
-  }
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
+  function draw() {
+    g.clearRect(0, 0, 64, 64);
+    g.strokeStyle = g.fillStyle = themeColor(color);
+    g.lineWidth = 7;
+    if (kind === 'ring') { g.beginPath(); g.arc(32, 32, 22, 0, Math.PI * 2); g.stroke(); }
+    if (kind === 'dot') { g.beginPath(); g.arc(32, 32, 20, 0, Math.PI * 2); g.fill(); }
+    if (kind === 'minus' || kind === 'plus') {
+      g.lineWidth = 5;
+      g.strokeRect(9, 9, 46, 46);
+      g.lineWidth = 7;
+      g.beginPath(); g.moveTo(20, 32); g.lineTo(44, 32);
+      if (kind === 'plus') { g.moveTo(32, 20); g.lineTo(32, 44); }
+      g.stroke();
+    }
+    t.needsUpdate = true;
+  }
+  draw();
+  onThemeChange(draw);
   return t;
 }
 

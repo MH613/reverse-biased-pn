@@ -4,6 +4,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { themeColor, onThemeChange, themeScene } from './theme.js';
 
 /** The meaning of every colour on the site. Kept in sync with --c-* in guide.css. */
 export const C = {
@@ -61,7 +62,7 @@ export function label(text, { size = 0.035, color = '#111111', weight = 500, fon
     canvas.width = w;
     canvas.height = px * 1.3;
     ctx.font = `${weight} ${px}px ${font}`;
-    ctx.fillStyle = color;
+    ctx.fillStyle = themeColor(color);
     ctx.textBaseline = 'middle';
     ctx.textAlign = align;
     ctx.fillText(value, align === 'left' ? 8 : align === 'right' ? w - 8 : w / 2, canvas.height / 2);
@@ -70,6 +71,7 @@ export function label(text, { size = 0.035, color = '#111111', weight = 500, fon
     if (sprite) obj.center.set(align === 'left' ? 0 : align === 'right' ? 1 : 0.5, 0.5);
   };
   obj.setText(text);
+  onThemeChange(() => { const value = current; current = null; obj.setText(value); });
   return obj;
 }
 
@@ -84,6 +86,7 @@ export function createView(host, { size = 1.4, target = [0, 0.1, 0], interactive
   Object.assign(renderer.domElement.style, { display: 'block', width: '100%', height: '100%' });
 
   const scene = new THREE.Scene();
+  const updateTheme = themeScene(scene, renderer);
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 60);
   const tgt = new THREE.Vector3(...target);
   // true isometric: 35.26° down, 45° round
@@ -136,6 +139,7 @@ export function createView(host, { size = 1.4, target = [0, 0.1, 0], interactive
     if (!visible) return;
     for (const f of tickers) f(dt, clock.elapsedTime);
     controls?.update();
+    updateTheme();
     renderer.render(scene, camera);
     frames++;
   });

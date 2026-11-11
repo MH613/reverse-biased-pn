@@ -12,7 +12,7 @@ import { createLineJunction } from './junction-line.js';
 import { INNER_HALF, scaleBar } from '../../xr/js/model.js';
 
 const $ = (id) => document.getElementById(id);
-const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const css = (n) => `var(${n})`;
 const pressOnly = (selector, button) => document.querySelectorAll(selector).forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
 const fillSlider = (input) => input.style.setProperty('--fill-to', `${((input.value - input.min) / (input.max - input.min)) * 100}%`);
 const VBR = breakdownVoltage(JUNCTION);

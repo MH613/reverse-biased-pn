@@ -12,6 +12,7 @@ import {
   gradedChargeAt, gradedFieldAt, gradedPotentialAt, formatSI,
 } from './device.js';
 import { createLab } from './lab.js';
+import { themeScene } from './theme.js';
 
 const embeddedLab = new URLSearchParams(location.search).get('embedded') === 'lab';
 const $ = (id) => document.getElementById(id);
@@ -27,6 +28,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setClearColor(0xffffff);
 host.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
+const updateTheme = themeScene(scene, renderer, { opaque: true });
 const camera = new THREE.PerspectiveCamera(30, 1, 0.01, 80);
 const grid = new THREE.GridHelper(30, 300, C.grid, C.grid);
 scene.add(grid);
@@ -276,6 +278,7 @@ addEventListener('keydown', (e) => {
 // ------------------------------------------------------------------ loop
 camera.position.set(...SCENES[0].cam);
 renderer.setAnimationLoop(() => {
+  updateTheme();
   const dt = Math.min(clock.getDelta(), 0.1);
   const t = clock.elapsedTime;
   for (let i = tweens.length - 1; i >= 0; i--) {

@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { C, solid, label, safeView } from './lineart.js';
 import { createLineJunction } from './junction-line.js';
+import { themeColor, onThemeChange } from './theme.js';
 
 const SNAP = 0.05;
 const snap = (v) => Math.round(v / SNAP) * SNAP;
@@ -43,22 +44,25 @@ function instrument(name, { w, h, d, title, knob = true, jacks }) {
   screen.userData.part = name;
   g.add(screen);
   const ctx = canvas.getContext('2d');
+  let lastDisplay = null;
   g.userData.show = (text, color = hex(C.ink), note = '') => {
-    ctx.fillStyle = '#f2f2f2';
+    lastDisplay = [text, color, note];
+    ctx.fillStyle = themeColor('#f2f2f2');
     ctx.fillRect(0, 0, 512, 150);
-    ctx.fillStyle = color;
+    ctx.fillStyle = themeColor(color);
     ctx.font = '500 78px "IBM Plex Mono", ui-monospace, monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(text, 26, 80);
     if (note) {
       ctx.font = '600 30px "IBM Plex Mono", monospace';
-      ctx.fillStyle = hex(C.current);
+      ctx.fillStyle = themeColor(C.current);
       ctx.textAlign = 'right';
       ctx.fillText(note, 492, 30);
     }
     texture.needsUpdate = true;
   };
+  onThemeChange(() => { if (lastDisplay) g.userData.show(...lastDisplay); });
   if (knob) {
     const k = solid(new THREE.CylinderGeometry(0.04, 0.04, 0.02, 32).rotateX(Math.PI / 2), { fill: 0xffffff, threshold: 40, hidden: false });
     k.position.set(w * 0.3, h * 0.62, d / 2 + 0.01);
