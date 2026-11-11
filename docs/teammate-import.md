@@ -19,7 +19,7 @@ Source: `pn-junction-main.zip`, uploaded by the user. Upstream: https://github.c
 
 ## Device themes
 
-`guide/css/theme.css` follows `prefers-color-scheme`. SVG plots use CSS variables so existing figures update with the device preference. `guide/js/theme.js` repaints original WebGL materials, grid vertex colors, marker textures and instrument displays on theme changes and when equipment is added. Current values, positions and wiring are preserved; the original physics is unchanged. QR codes and AR marker images keep their original scan contrast.
+`guide/css/theme.css` follows the host’s explicit `data-theme` choice, defaulting to light even on dark devices. The initial choice is passed in the document URL to avoid a theme flash, and later changes update the same document without a reload. SVG plots use CSS variables so existing figures update with the site theme. `guide/js/theme.js` repaints original WebGL materials, grid vertex colors, marker textures and instrument displays on host theme changes and when equipment is added. Current values, positions and wiring are preserved; the original physics is unchanged. QR codes and AR marker images keep their original scan contrast.
 
 ## Build and verification
 

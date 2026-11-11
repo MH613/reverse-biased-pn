@@ -9,10 +9,12 @@ import {
   FlaskConical,
   Maximize,
   Minimize,
+  Moon,
   Pause,
   Play,
   RotateCcw,
   SkipForward,
+  Sun,
   X,
 } from "lucide-react";
 import { LessonPanel } from "./presentation/LessonPanel";
@@ -40,6 +42,19 @@ const inspection: Record<string, string> = {
     "Electrons are mobile negative charges: abundant in N-type silicon, scarce in P-type.",
 };
 function App() {
+  const [theme, setTheme] = useState<"light" | "dark">(
+    () => document.documentElement.dataset.theme === "dark" ? "dark" : "light",
+  );
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="color-scheme"]')
+      ?.setAttribute("content", theme);
+    document.querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", theme === "dark" ? "#171a1f" : "#ffffff");
+    try {
+      localStorage.setItem("junction-theme", theme);
+    } catch {}
+  }, [theme]);
   const [view, setView] = useState(-1),
     [playing, setPlaying] = useState(true),
     [bias, setBias] = useState<BiasMode>("reverse");
@@ -257,13 +272,28 @@ function App() {
                 The explanation <ArrowUpRight size={12} />
               </button>
             </nav>
-            <button
-              className="read-button header-action"
-              aria-pressed={externalView === "read"}
-              onClick={() => setExternalView("read")}
-            >
-              <BookOpen size={15} /> Read as a page <ArrowUpRight size={13} />
-            </button>
+            <div className="header-right">
+              <button
+                className="read-button header-action"
+                aria-pressed={externalView === "read"}
+                onClick={() => setExternalView("read")}
+              >
+                <BookOpen size={15} /> Read as a page <ArrowUpRight size={13} />
+              </button>
+              <button
+                className="theme-toggle header-action"
+                aria-label="Toggle dark mode"
+                aria-pressed={theme === "dark"}
+                title={
+                  theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+                }
+                onClick={() =>
+                  setTheme((value) => value === "light" ? "dark" : "light")
+                }
+              >
+                {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+              </button>
+            </div>
           </header>
           <p className="sr-only" role="status" aria-atomic="true">
             {externalView
@@ -278,6 +308,7 @@ function App() {
             <ImportedView
               key={externalView}
               mode={externalView}
+              theme={theme}
               onOverview={() => {
                 setExternalView(null);
                 go(-1);

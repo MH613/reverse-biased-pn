@@ -60,7 +60,7 @@ test("the reader omits recap and keeps figures, equations and open lab working l
   const f = page.frameLocator('iframe[title="Read as a page"]');
   await expect(page.locator('iframe[title="Read as a page"]')).toHaveAttribute(
     "src",
-    /guide-[a-f0-9]{12}\/page\.html$/,
+    /guide-[a-f0-9]{12}\/page\.html\?theme=light$/,
   );
   await expect(f.locator("body")).not.toContainText("Physics code and 130 automated tests");
   await expect(f.locator('a[href="https://github.com/obadawaleed44/pn-junction"]')).toHaveCount(0);

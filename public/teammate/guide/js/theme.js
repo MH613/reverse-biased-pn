@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 
-const media = matchMedia('(prefers-color-scheme: dark)');
 const listeners = new Set();
-media.addEventListener('change', () => listeners.forEach((draw) => draw()));
+new MutationObserver(() => listeners.forEach((draw) => draw())).observe(
+  document.documentElement, { attributes: true, attributeFilter: ['data-theme'] },
+);
 
 // Map authored drawing inks, keeping the original palette intact in light mode.
 const dark = new Map(Object.entries({
@@ -16,7 +17,7 @@ const dark = new Map(Object.entries({
 export function themeColor(value) {
   const color = new THREE.Color(value);
   const key = color.getHexString();
-  return media.matches ? `#${dark.get(key) ?? key}` : `#${key}`;
+  return document.documentElement.dataset.theme === 'dark' ? `#${dark.get(key) ?? key}` : `#${key}`;
 }
 export function onThemeChange(draw) { listeners.add(draw); }
 

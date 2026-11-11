@@ -12,4 +12,4 @@ Overview omits its eyebrow, subtitle and bottom bar; presentation stages retain 
 
 The original `src/lab/` code and its pure geometry/circuit/model tests are retained as reference code; the public entry uses `public/teammate/guide/`.
 
-Device-theme checks cover text and graph contrast, mobile widths, live light/dark changes, WebGL materials and display textures, and preservation of voltage, wiring and reader state. The imported guide uses a content-hashed directory so its HTML, CSS and modules update together after deployment.
+Theme checks cover a light default on dark devices, saved explicit theme choices, text and graph contrast, mobile widths, manual light/dark changes, WebGL materials and display textures, and preservation of voltage, wiring and reader state. The imported guide uses a content-hashed directory so its HTML, CSS and modules update together after deployment.

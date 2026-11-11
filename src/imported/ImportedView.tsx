@@ -3,15 +3,21 @@ import { guideRevision } from "./guideRevision";
 export type ImportedMode = "lab" | "read";
 export function ImportedView({
   mode,
+  theme,
   onOverview,
   onContinue,
 }: {
   mode: ImportedMode;
+  theme: "light" | "dark";
   onOverview: () => void;
   onContinue: () => void;
 }) {
   const [loaded, setLoaded] = useState(false);
   const iframe = useRef<HTMLIFrameElement>(null);
+  const initialTheme = useRef(theme);
+  useEffect(() => {
+    iframe.current?.contentDocument?.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
   useEffect(() => {
     if (mode !== "lab") return;
     const complete = (event: MessageEvent) => {
@@ -46,8 +52,8 @@ export function ImportedView({
   }, [mode, onContinue]);
   const source =
     mode === "lab"
-      ? "index.html?embedded=lab&scene=5"
-      : "page.html";
+      ? `index.html?embedded=lab&scene=5&theme=${initialTheme.current}`
+      : `page.html?theme=${initialTheme.current}`;
   return (
     <section
       className="imported-view"
@@ -67,6 +73,7 @@ export function ImportedView({
           setLoaded(true);
           // Keep the copied reading page intact while its home link returns to our app.
           const doc = event.currentTarget.contentDocument;
+          doc?.documentElement.setAttribute("data-theme", theme);
           doc?.addEventListener("click", (e) => {
             const anchor = (e.target as Element).closest("a");
             if (!anchor) return;
