@@ -27,11 +27,13 @@ export function Junction({
   selected,
   onSelect,
   embedded = false,
+  overview = false,
   showCircuit = true,
   showGrid = true,
   interactive = true,
 }: {
   embedded?: boolean;
+  overview?: boolean;
   showCircuit?: boolean;
   showGrid?: boolean;
   interactive?: boolean;
@@ -93,7 +95,9 @@ export function Junction({
       data-depletion-width-m={physical?.widthM}
       data-p-boundary-m={physical ? -physical.xpM : undefined}
       data-n-boundary-m={physical?.xnM}
-      viewBox={embedded ? undefined : "0 0 940 600"}
+      viewBox={
+        embedded ? undefined : overview ? "110 100 740 350" : "0 0 940 600"
+      }
       role="img"
       aria-label="Isometric PN semiconductor junction: P type on the left, N type on the right, with a central depletion region. Electric field points from N to P."
     >

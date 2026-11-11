@@ -729,10 +729,6 @@ input[type="range"]::-webkit-slider-thumb {
     will-change: auto;
   }
 }
-.is-home .begin-position {
-  top: auto;
-  bottom: 30px;
-}
 .is-home .figure-labels {
   opacity: 0;
 }
@@ -740,25 +736,9 @@ input[type="range"]::-webkit-slider-thumb {
   opacity: 0.16;
 }
 @media (max-width: 759px) {
-  .is-home .begin-position {
-    top: auto;
-    bottom: 36px;
-  }
   .is-home .intro-copy h1 {
     font-size: clamp(32px, 10.5vw, 41px);
     white-space: nowrap;
-  }
-  .is-home .intro-copy .theory {
-    max-width: 260px;
-  }
-  .is-home .scene-position {
-    top: 52%;
-  }
-}
-@media (min-width: 760px) and (max-height: 760px) {
-  .is-home .begin-position {
-    top: auto;
-    bottom: 22px;
   }
 }
 

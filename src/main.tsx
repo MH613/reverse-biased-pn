@@ -58,7 +58,6 @@ function App() {
     width: innerWidth,
     height: innerHeight,
   });
-  const compact = viewport.width < 760;
   const wide = viewport.width >= 1440;
   useEffect(() => {
     const resize = () =>
@@ -196,20 +195,10 @@ function App() {
     reset();
     setPlaying(true);
   };
-  // Keep a clear vertical band between the overview copy and discovery controls.
-  // Short screens retain the scrollable layout's minimum usable height.
-  const homeSceneWidth = Math.min(
-    viewport.width * (compact ? 1.12 : 0.75),
-    1280,
-  );
-  const homeFigureHeight =
-    Math.max(viewport.height, compact ? 820 : 640) - (compact ? 410 : 390);
-  const homeScale =
-    0.96 * Math.min(1, homeFigureHeight / (homeSceneWidth * 0.42));
   const camera = {
     x: "0vw",
     y: "0vh",
-    scale: home ? homeScale : 0.95,
+    scale: home ? 1 : 0.95,
     rotate: home ? 0 : -1,
   };
   return (
@@ -340,6 +329,7 @@ function App() {
                 }
               >
                 <Junction
+                  overview={home}
                   showCarriers
                   showIons
                   selected={selected}
