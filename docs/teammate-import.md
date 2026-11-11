@@ -1,6 +1,6 @@
 # Teammate application import
 
-Source: `pn-junction-main.zip`, uploaded by the user. The upstream attribution in its reading page is retained. Original files are under `public/teammate/`.
+Source: `pn-junction-main.zip`, uploaded by the user. Upstream: https://github.com/obadawaleed44/pn-junction. The reading-page source/test-count footer is omitted at the user's request. Original files are under `public/teammate/`.
 
 ## Preserved content
 
